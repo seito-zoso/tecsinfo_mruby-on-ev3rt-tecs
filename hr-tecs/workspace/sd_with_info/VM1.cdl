@@ -1,0 +1,45 @@
+import("EV3_common.cdl");
+import("TECSInfo.cdl");
+
+
+celltype tTaskMain {
+	entry sTaskBody eBody;
+
+};
+
+celltype tTECSInfoMain {
+	entry sTaskBody	eBody;
+	call sTECSInfo cTECSInfo;
+};
+//[domain(HRP2, "trusted")]
+//[domain(HRP2, "nontrusted")]
+region rDomainEV3 {
+	cell tTaskMain TaskMain {
+
+	};
+	cell tTask Task {
+	// 呼び口の結合
+		cBody = TaskBody.eBody;
+		//* 属性の設定
+		taskAttribute 	= C_EXP("TA_ACT");
+		priority 		= C_EXP("EV3_MRUBY_VM_PRIORITY");
+		systemStackSize = C_EXP("MRUBY_VM_STACK_SIZE");
+		//userStackSize = C_EXP("STACK_SIZE");
+	};
+
+	/* TECSInfo */
+	cell tTECSInfoMain TECSInfoMain {
+
+	};
+	cell tCyclicTask TECSInfoTask {
+	// 呼び口の結合
+		cBody = TECSInfoMain.eBody;
+		//* 属性の設定
+		cyclicAttribute 	= C_EXP("TA_STA");
+		cyclicTime = 10; // 0.01秒
+		priority 		= C_EXP("EV3_MRUBY_VM_PRIORITY") - 1;
+		systemStackSize = C_EXP("MRUBY_VM_STACK_SIZE"); // systemstacksizeでなくていいのか。kernel.cdlも書き換えなければ
+		//userStackSize = C_EXP("STACK_SIZE");
+	};
+
+};

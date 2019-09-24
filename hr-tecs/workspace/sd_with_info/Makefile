@@ -290,7 +290,7 @@ CFLAGS = $(COPTS) $(CDEFS) $(INCLUDES)
 #  アプリケーションプログラムに関する定義
 #
 APPLNAME = tEV3Sample
-APPLDIR = ../sd
+APPLDIR = ../sd_with_info
 APPL_CFG = $(APPLNAME).cfg
 ifeq ($(RUNNING_BODY_TIRE),big)
     APPL_CDL = $(APPLNAME)_bigtire.cdl
