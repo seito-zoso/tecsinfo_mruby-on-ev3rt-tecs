@@ -40,32 +40,32 @@ region rDomainEV3 {
 	// cell tTaskMain TaskMain {
 
 	// };
-	cell tTask Task {
-	// 呼び口の結合
-		// cBody = TaskMain.eBody;
-		cBody = TECSInfoMain.eBody;
-		//* 属性の設定
-		taskAttribute 	= C_EXP("TA_ACT");
-		priority 		= C_EXP("EV3_MRUBY_VM_PRIORITY");
-		systemStackSize = C_EXP("MRUBY_VM_STACK_SIZE");
-		//userStackSize = C_EXP("STACK_SIZE");
-	};
+	// cell tTask Task {
+	// // 呼び口の結合
+	// 	cBody = TaskMain.eBody;
+	// 	// cBody = TECSInfoMain.eBody;
+	// 	//* 属性の設定
+	// 	taskAttribute 	= C_EXP("TA_ACT");
+	// 	priority 		= C_EXP("EV3_MRUBY_VM_PRIORITY");
+	// 	systemStackSize = C_EXP("MRUBY_VM_STACK_SIZE");
+	// 	//userStackSize = C_EXP("STACK_SIZE");
+	// };
 
 	/* TECSInfo */
 	cell tTECSInfoMain TECSInfoMain {
     cTECSInfo  = TECSInfo.eTECSInfo;
 		cLCD = LCD.eLCD;
 	};
-	// cell tCyclicTask TECSInfoTask {
-	// // 呼び口の結合
-	// 	cBody = TECSInfoMain.eBody;
-	// 	//* 属性の設定
-	// 	cyclicAttribute 	= C_EXP("TA_STA");
-	// 	cyclicTime = 10; // 0.01秒
-	// 	priority = C_EXP("EV3_MRUBY_VM_PRIORITY - 1");
-	// 	stackSize = C_EXP("MRUBY_VM_STACK_SIZE"); // systemstacksizeでなくていいのか。kernel.cdlも書き換えなければ
-	// 	//userStackSize = C_EXP("STACK_SIZE");
-	// };
+	cell tCyclicTask TECSInfoTask {
+	// 呼び口の結合
+		cBody = TECSInfoMain.eBody;
+		//* 属性の設定
+		cyclicAttribute 	= C_EXP("TA_STA");
+		cyclicTime = 10; // 0.01秒
+		priority = C_EXP("EV3_MRUBY_VM_PRIORITY - 1");
+		stackSize = C_EXP("MRUBY_VM_STACK_SIZE"); // systemstacksizeでなくていいのか。kernel.cdlも書き換えなければ
+		//userStackSize = C_EXP("STACK_SIZE");
+	};
 /****** TECSInfo cell ******/
   cell nTECSInfo::tTECSInfo TECSInfo {
       // cTECSInfo = rTECSInfo::TECSInfoSub.eTECSInfo;
