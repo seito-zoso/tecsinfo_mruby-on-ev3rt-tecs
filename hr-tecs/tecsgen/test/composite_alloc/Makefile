@@ -78,6 +78,21 @@ clean :
 
 tecs : $(PRE_TECSGEN_TARGET) $(TIMESTAMP) $(POST_TECSGEN_TARGET)
 
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecs
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
+
 $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN)  -I ../cygwin composite_alloc.cdl
 # generic target for objs

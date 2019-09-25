@@ -51,6 +51,21 @@ $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN_EXE) -L . -I ../cygwin -I ../../tecs generate.cdl
 	touch $(TIMESTAMP)
 
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecs
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
+
 CsTest.o : CsTest.cxx
 	$(CXXC) -c $(CFLAGS) -o $@ $<
 

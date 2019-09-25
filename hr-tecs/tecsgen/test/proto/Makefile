@@ -82,6 +82,17 @@ $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN_EXE)  -I ../cygwin proto.cdl
 	touch $(TIMESTAMP)
 
+tecsflow : tcflow tecs
+	tecsflow -g $(GEN_DIR)
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS)
+	tcflow -c 'gcc -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
 # generic target for objs
 $(_TECS_OBJ_DIR)%.o : %.c
 	$(CC) -c $(CFLAGS) -o $@ $<

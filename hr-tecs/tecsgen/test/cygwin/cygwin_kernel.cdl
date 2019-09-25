@@ -221,8 +221,8 @@ celltype tEventflag{
 		pthread_mutex_t   mutex      = C_EXP( "PTHREAD_MUTEX_INITIALIZER" );
 //		pthread_mutex_t   cond_mutex = C_EXP( "PTHREAD_MUTEX_INITIALIZER" );
 		pthread_cond_t    cond       = C_EXP( "PTHREAD_COND_INITIALIZER" );
-		pthread_once_t    once       = { C_EXP("PTHREAD_MUTEX_INITIALIZER"), 0 };
-//		pthread_once_t    once       = C_EXP( "PTHREAD_ONCE_INIT" );
+//		pthread_once_t    once       = { C_EXP("PTHREAD_MUTEX_INITIALIZER"), 0 };
+		pthread_once_t    once       = C_EXP( "PTHREAD_ONCE_INIT" );
 		FLGPTN            pattern    = flagPattern;
 	};
 

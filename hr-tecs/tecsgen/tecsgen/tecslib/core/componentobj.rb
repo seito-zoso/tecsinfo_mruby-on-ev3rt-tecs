@@ -3,7 +3,7 @@
 #  TECS Generator
 #      Generator for TOPPERS Embedded Component System
 #  
-#   Copyright (C) 2008-2017 by TOPPERS Project
+#   Copyright (C) 2008-2019 by TOPPERS Project
 #--
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
 #   ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: componentobj.rb 2633 2017-04-02 06:02:05Z okuma-top $
+#   $Id: componentobj.rb 2846 2018-03-25 11:30:55Z okuma-top $
 #++
 
 # STAGE:
@@ -148,7 +148,7 @@ class Signature < NSBDNode  # < Nestable
       @b_empty = true
     end
 
-    set_descriptor_list
+    # set_descriptor_list ##
 
     if @generate then
       signature_plugin
@@ -363,6 +363,16 @@ end
     @descriptor_list
   end
 
+  @@set_descriptor_list = {}
+  def self.set_descriptor_list
+    Namespace.get_root.travers_all_signature{ |sig|
+      if @@set_descriptor_list[ sig ] == nil then
+        @@set_descriptor_list[ sig ] = true
+        sig.set_descriptor_list
+      end
+    }
+  end
+
   #== Signature# 引数で参照されている Descriptor 型のリストを作成する
   def set_descriptor_list
     desc_list = { }
@@ -460,6 +470,72 @@ end
 
 end
 
+module CelltypePluginModule
+  #=== Celltype# セルタイププラグイン (generate 指定子)
+  def celltype_plugin
+    plugin_name = @generate[0]
+    option = @generate[1]
+    @generate[2] = apply_plugin( plugin_name, option )
+  end
+
+  #=== Celltype# セルタイププラグインをこのセルタイプに適用
+  def apply_plugin( plugin_name, option )
+
+    # plClass = load_plugin( plugin_name, CelltypePlugin )
+    if kind_of? Celltype then
+      plugin_class = CelltypePlugin
+    elsif kind_of? CompositeCelltype then
+      plugin_class = CompositePlugin
+    else
+      raise "unknown class #{self.class.name}"
+    end
+    
+    plClass = load_plugin( plugin_name, plugin_class )
+    return if plClass == nil
+    if $verbose then
+      print "new celltype plugin: plugin_object = #{plClass.class.name}.new( #{@name}, #{option} )\n"
+    end
+
+    begin
+      plugin_object = plClass.new( self, option )
+      @generate_list << [ plugin_name, option, plugin_object ]
+      plugin_object.set_locale @locale
+      generate_and_parse plugin_object
+    rescue Exception => evar
+      cdl_error( "S1023 $1: fail to new" , plugin_name )
+      print_exception( evar )
+    end
+
+    # 既に存在するセルに new_cell を適用
+    @cell_list.each{ |cell|
+      apply_plugin_cell plugin_object, cell
+    }
+
+    return plugin_object
+  end
+
+  def apply_plugin_cell plugin, cell
+    begin
+      plugin.new_cell cell
+    rescue Exception => evar
+      cdl_error( "S1037 $1: celltype plugin fail to new_cell" , plugin.class.name )
+      print_exception( evar )
+    end
+  end
+
+  def celltype_plugin_new_cell cell
+    @generate_list.each{ |generate|
+      celltype_plugin = generate[2]
+      begin
+        celltype_plugin.new_cell cell
+      rescue Exception => evar
+        cdl_error( "S1037 $1: celltype plugin fail to new_cell" , celltype_plugin.class.name )
+        print_exception( evar )
+      end
+    }
+  end
+end #CelltypePluginModule
+
 class Celltype < NSBDNode # < Nestable
 # @name:: Symbol
 # @global_name:: Symbol
@@ -471,13 +547,15 @@ class Celltype < NSBDNode # < Nestable
 # @factory_list::   Factory[]
 # @ct_factory_list::    Factory[] :    celltype factory
 # @cell_list:: Cell[] : 定義のみ (V1.0.0.2 以降)
+# @ordered_cell_list:: Cell[] : ID 順に順序付けされたセルリスト、最適化以降有効 (リンク単位ごとに生成されなおす)
 # @singleton:: bool
 # @idx_is_id:: bool
 # @idx_is_id_act:: bool: actual value
+# @b_need_ptab:: bool: true if having cells in multi-domain
 # @active:: bool
 # @b_reuse:: bool :  reuse 指定されて import された(template 不要)
 # @generate:: [ Symbol, String, Plugin ]  = [ PluginName, option, Plugin ] Plugin は生成後に追加される
-# @generate_list:: [@generate]
+# @generate_list:: [ [ Symbol, String, Plugin ], ... ]   generate 文で追加された generate
 #
 # @n_attribute_ro:: int >= 0    none specified
 # @n_attribute_rw:: int >= 0    # of [rw] specified attributes (obsolete)
@@ -508,7 +586,8 @@ class Celltype < NSBDNode # < Nestable
 #                                               ルートリージョンはドメイン名が　nil
 
   include PluginModule
-
+  include CelltypePluginModule
+  
   @@nest_stack_index = -1
   @@nest_stack = []
   @@current_object = nil
@@ -549,6 +628,7 @@ class Celltype < NSBDNode # < Nestable
     @singleton = false
     @active = false
     @generate = nil
+    @generate_list = []
 
     @n_attribute_ro = 0
     @n_attribute_rw = 0
@@ -585,10 +665,13 @@ class Celltype < NSBDNode # < Nestable
 
     if $idx_is_id then
       @idx_is_id = true
+      @idx_is_id_act = true
+      @b_need_ptab = true
     else
       @idx_is_id = false
+      @idx_is_id_act = false
+      @b_need_ptab = false
     end
-    @idx_is_id_act = @idx_is_id
 
     Namespace.new_celltype( self )
     set_namespace_path # @NamespacePath の設定
@@ -631,7 +714,7 @@ class Celltype < NSBDNode # < Nestable
       celltype_plugin
     end
 
-    check_dynamic_join
+    # check_dynamic_join ##
 
     @@current_object = nil
   end
@@ -817,6 +900,7 @@ class Celltype < NSBDNode # < Nestable
       when :IDX_IS_ID
         @idx_is_id = true
         @idx_is_id_act = true
+        @b_need_ptab = true
       when :ACTIVE
         @active = true
       when :GENERATE
@@ -830,6 +914,7 @@ class Celltype < NSBDNode # < Nestable
     }
     if @singleton then
       @idx_is_id_act = false
+      @b_need_ptab = false
     end
   end
 
@@ -930,34 +1015,19 @@ class Celltype < NSBDNode # < Nestable
 
   end
 
-  #=== Celltype# セルタイププラグイン (generate 指定子)
-  def celltype_plugin
-    plugin_name = @generate[0]
-    option = @generate[1]
-    @generate[2] = apply_plugin( plugin_name, option )
-  end
-
-  def apply_plugin( plugin_name, option )
-
-    plClass = load_plugin( plugin_name, CelltypePlugin )
-    return if plClass == nil
-    if $verbose then
-      print "new celltype plugin: plugin_object = #{plClass.class.name}.new( #{@name}, #{option} )\n"
-    end
-
-    begin
-      plugin_object = plClass.new( self, option )
-      plugin_object.set_locale @locale
-      generate_and_parse plugin_object
-    rescue Exception => evar
-      cdl_error( "S1023 $1: fail to new" , plugin_name )
-      print_exception( evar )
-    end
-    return plugin_object
+  @@dynamic_join_checked_list = {}
+  def self.check_dynamic_join
+    Namespace.get_root.travers_all_celltype{ |ct|
+      if @@dynamic_join_checked_list[ ct ] == nil then
+        @@dynamic_join_checked_list[ ct ] = true
+        ct.check_dynamic_join
+      end
+    }
   end
 
   #=== Celltype#dynamic の適合性チェック
   def check_dynamic_join
+    return if ! $verbose
     @port.each{ |port|
       signature = port.get_signature
       next if signature == nil   # すでにエラー
@@ -995,7 +1065,7 @@ class Celltype < NSBDNode # < Nestable
                 next if find_descriptor_param signature, :DYNAMIC
               end
             end
-            cdl_warning( 'W9999 "$1" cannot handle Descriptor "$2" infromation for port "$3"', @name, param.get_name, port.get_name )
+            cdl_warning( 'W9999 "$1" cannot handle Descriptor "$2" information for port "$3"', @name, param.get_name, port.get_name )
           }
         end
       end
@@ -1070,6 +1140,7 @@ class Celltype < NSBDNode # < Nestable
   # セルの構文解釈の最後でこのメソドを呼出される．
   # シングルトンセルが同じ linkunit に複数ないかチェック
   def new_cell( cell )
+    dbgPrint "Celltype#new_cell( #{cell.get_name} )\n"
     # Celltype では Cell の set_owner しない
     # シングルトンで、プロトタイプ宣言でない場合、コード生成対象リージョンの場合
     if @singleton  then
@@ -1080,20 +1151,14 @@ class Celltype < NSBDNode # < Nestable
       }
     end
     @cell_list << cell
+
     # プラグインにより生成されたセルタイプか ?
     if @plugin then
       @plugin.new_cell cell
     end
-    # celltype に generate が指定されされているか(セルタイププラグイン)
-    celltype_plugin = get_celltype_plugin
-    if celltype_plugin then
-      begin
-        celltype_plugin.new_cell cell
-      rescue Exception => evar
-        cdl_error( "S1037 $1: celltype plugin fail to new_cell" , celltype_plugin.class.name )
-        print_exception( evar )
-      end
-    end
+
+    # セルタイププラグインの適用
+    celltype_plugin_new_cell cell
   end
 
   #=== Celltype# セルタイプは INIB を持つか？
@@ -1105,14 +1170,16 @@ class Celltype < NSBDNode # < Nestable
   #     size_is を伴う var
   #     呼び口（ただし、最適化で不要となるものは除く）
   def has_INIB?
-#    print "name=#{@name} @n_attribute_ro=#{@n_attribute_ro}  @n_var_size_is=#{@n_var_size_is} @n_call_port=#{@n_call_port} @n_call_port_omitted_in_CB=#{@n_call_port_omitted_in_CB} @n_entry_port_array_ns=#{@n_entry_port_array_ns}\n"
-    return $rom &&
-      (@n_attribute_ro > 0 ||
-       @n_var_size_is > 0 ||
-       ( @n_call_port - @n_call_port_omitted_in_CB - (@n_call_port_dynamic-@n_call_port_array_dynamic) ) > 0 ||
-       $ram_initializer && @n_call_port_dynamic ||
-       @n_entry_port_array_ns > 0)
-#    return $rom && (@n_attribute_ro > 0 || ( @n_call_port - @n_call_port_omitted_in_CB ) > 0)
+
+    result = $rom &&
+             (@n_attribute_ro > 0 ||
+              @n_var_size_is > 0 ||
+              ( @n_call_port - @n_call_port_omitted_in_CB - (@n_call_port_dynamic-@n_call_port_array_dynamic) ) > 0 ||
+              $ram_initializer && @n_call_port_dynamic > 0 ||
+              @n_entry_port_array_ns > 0)
+    # print "name=#{@name} n_attribute_ro=#{@n_attribute_ro}  n_var_size_is=#{@n_var_size_is} n_call_port=#{@n_call_port} n_call_port_omitted_in_CB=#{@n_call_port_omitted_in_CB} n_call_port_dynamic=#{@n_call_port_dynamic} n_call_port_array_dynamic=#{@n_call_port_array_dynamic} n_entry_port_array_ns=#{@n_entry_port_array_ns} has_INIB?=#{result}\n"
+
+    return result
   end
 
   #=== Celltype# セルタイプは CB を持つか？
@@ -1193,6 +1260,10 @@ class Celltype < NSBDNode # < Nestable
 
   def idx_is_id_act?
     @idx_is_id_act
+  end
+
+  def multi_domain?
+    @b_need_ptab
   end
 
   #=== Celltype# アクティブではないか
@@ -1315,6 +1386,7 @@ class Cell < NSBDNode # < Nestable
 #                                               すべての意味解析(through, composite展開)が終わった後に設定する
 #                                               逆require ポートに対して複数の結合がないかチェックする
 # @generate:: [ Symbol, String, Plugin ]  = [ PluginName, option, Plugin ] Plugin は生成後に追加される
+# @b_post_code_generated:: Bool: true if generated in tmp_plugin_post_code.cdl
 #
 # composite のためインスタンス変数
 # @in_composite:: bool : true if in composite celltype
@@ -1337,7 +1409,9 @@ class Cell < NSBDNode # < Nestable
 # ID のためのインスタンス変数（optimize.rb にて設定）
 # @id:: Integer : コード生成直前に設定  (プロトタイプ宣言の場合は -1 のまま放置)
 # @id_specified::Integer : 指定された id
-# @restrict_list::{ entry_name => { func_name, [ region_name, ... ] } }
+# @restrict_list::{ entry_name => { func_name, [ region_path_str, ... ] } }
+# @restrict_list2::{ entry_name => { func_name, [ domain_root_region, ... ] } }
+# @b_restrict_referenced::Bool: restrict_list が参照れた
 
 =begin
 # Cell クラスは、以下のものを扱う
@@ -1421,6 +1495,9 @@ class Cell < NSBDNode # < Nestable
     @entry_array_max_subscript = {}
     @referenced_port_list = {}
     @restrict_list = {}
+    @restrict_list2 = {}
+    @b_restrict_referenced = false
+    @b_post_code_generated = false
 
     @cell_list = {}
     @cell_list2 = []
@@ -1446,7 +1523,7 @@ class Cell < NSBDNode # < Nestable
     if @in_composite then
       cell_prev = CompositeCelltype.find( name )
       if cell_prev == nil then
-        CompositeCelltype.new_cell( self )
+        CompositeCelltype.new_cell_in_composite( self )
       end
     else
       # cell_prev = Namespace.find( [ name ] )   # 親まで捜しにいく
@@ -1765,6 +1842,9 @@ class Cell < NSBDNode # < Nestable
       # f_def == true の場合 new_def で、呼出される
       set_specifier_list( Generator.get_statement_specifier )
     end
+    if TECSGEN.post_coded?
+      @b_post_code_generated = true
+    end
     set_f_def f_def
 
     if @generate then
@@ -1781,7 +1861,8 @@ class Cell < NSBDNode # < Nestable
     end
 
     if ! @in_composite then
-      if @celltype.instance_of? Celltype then
+      # if @celltype.instance_of? Celltype then
+      if @celltype then  # composite でも呼びだす, エラー時 nil
         @celltype.new_cell self
       end
       @@cell_list << self
@@ -2094,6 +2175,20 @@ class Cell < NSBDNode # < Nestable
     @in_composite
   end
 
+  #=== Cell# composite のセルか？
+  def is_of_composite?
+    if @celltype.kind_of? CompositeCelltype
+      return true
+    else
+      return false
+    end
+  end
+
+  #=== Cell# tmp_plugin_post_code.cdl で生成されたセルか？
+  def post_code_generated?
+    @b_post_code_generated
+  end
+
   # composite cell の port に対応する内部の cell の port の名前（リンク時に必要な名前）
   def get_real_global_name port_name
     if @celltype.instance_of?( CompositeCelltype ) then
@@ -2181,6 +2276,8 @@ class Cell < NSBDNode # < Nestable
     if @celltype.instance_of?( CompositeCelltype ) then
 
       # セルタイプ内で port_name の CompositeCelltypeJoin を探す（コード生成段階では必ず見つかる）
+      # print "get_real_cell: cell=#{@name} port=#{port_name}\n"
+      # pp @cell_list
       cj = @celltype.find_export( port_name )
 
       # composite の内部のセルに対し再帰的に get_real_port を適用
@@ -2192,6 +2289,15 @@ class Cell < NSBDNode # < Nestable
     end
   end
 
+  #=== Cell#get_real_celltype
+  #
+  def get_real_celltype( port_name )
+    if @celltype.instance_of?( CompositeCelltype ) then
+      return @celltype.get_real_celltype port_name
+    else
+      return @celltype
+    end
+  end
 
   #=== Cell# 受け口のport の参照カウントをアップする
   #port_name:: Symbol  : ポート名
@@ -2232,6 +2338,18 @@ class Cell < NSBDNode # < Nestable
 
       return "#{@global_name}_#{port_name}"
     end
+  end
+
+  #Cell#属性の初期値を得る
+  #attr_name::Symbol  必ず初期化されていないと Ruby 例外となる
+  def get_attr_initializer attr_name
+    val = @join_list.get_item( attr_name )
+    if val == nil then
+      val = (@celltype.find  attr_name).get_initializer
+    else
+      val = val.get_rhs
+    end
+    return val
   end
 
   def get_celltype
@@ -2482,8 +2600,14 @@ class Cell < NSBDNode # < Nestable
           }
         else
           cell = j.get_rhs_cell2
-          next if cell == nil     # 右辺が見つからなかった．既にエラー
+          next if cell == nil || cell.get_celltype == nil     # 右辺が見つからなかった．既にエラー
           port = cell.get_celltype.find( j.get_rhs_port2 )
+          if port == nil then
+            dbgPrint "set_port_ref: #{@name}.#{j.get_name} = #{cell.get_name}.#{j.get_rhs_port2}\n"
+            # through プラグインで生成されたセルの受け口が見つからないケース (のハズ)
+            cdl_error( "entry '$1' not found in '$2' refered from $3.$4", j.get_rhs_port2, cell.get_name, @name, j.get_name )
+            next
+          end
           dbgPrint( "set_port_reference_count: #{@name}.#{j.get_name} => #{cell.get_name}.#{port.get_name}\n")
           cell.port_referenced port
         end
@@ -2892,19 +3016,6 @@ class Cell < NSBDNode # < Nestable
       # compoiste セル展開中の composite は展開しない (CompositeCelltype::expand 内で再帰的に expnad)
       expand
     end
-
-=begin
-    # celltype に generate が指定されされているか
-    celltype_plugin = @celltype.get_celltype_plugin
-    if celltype_plugin then
-      begin
-        celltype_plugin.new_cell self
-      rescue Exception => evar
-        cdl_error( "S1037 $1: celltype plugin fail to new_cell" , celltype_plugin.class.name )
-        print_exception( evar )
-      end
-    end
-=end
   end
 
   #=== Cell# composite セルの展開
@@ -2941,39 +3052,43 @@ class Cell < NSBDNode # < Nestable
 
   #=== Cell#restrict を追加
   def add_restrict( entry_name, func_name, region_name_list )
-    if @restrict_list[ entry_name ] then
-      if @restrict_list[ entry_name ][ func_name ] then
-        @restrict_list[ entry_name ][ func_name ].each{ |rn|
-          if region_name_list.include? rn then
-            # p func_name
-            name = func_name ? entry_name : entry_name+"."+func_name
-            cdl_warning( "W9999 $1 restrict region duplicate $2", name, rn )
-          end
-        }
-      else
-        @restrict_list[ entry_name ][ func_name ] = region_name_list
-      end
-    else
-      func_list = { }
-      func_list[ func_name ] = region_name_list
-      @restrict_list[ entry_name ] = func_list
+    if @restrict_list[ entry_name ] == nil then
+      @restrict_list[ entry_name ] = {}
+      @restrict_list2[ entry_name ] = {}
     end
-    # pp @restrict_list
+    if @restrict_list[ entry_name ][ func_name ] == nil then
+      @restrict_list[ entry_name ][ func_name ] = []
+      @restrict_list2[ entry_name ][ func_name ] = []
+    end
+    region_name_list.each { |rp|
+      @restrict_list[ entry_name ][ func_name ] << rp
+      # p "Class: " + rp.to_s
+      obj = Namespace.find rp
+      if ( obj.kind_of? Region ) then
+        @restrict_list2[ entry_name ][ func_name ] << obj.get_domain_root
+      else
+        cdl_error( "S9999 $1 not found or not region", rp.to_s )
+      end
+    }
   end
 
   #=== Cell#check_restrict_list
   def check_restrict_list
+    # p "check_restrict_list"
     @restrict_list.each{ |entry_name, func_hash|
       func_hash.each{ |func_name, region_list|
-        region_list.each{ |rn|
-          obj = Namespace.find [ rn ]
+        region_list.each{ |rp|
+          obj = Namespace.find rp
           if ( obj.kind_of? Region ) then
             if obj.get_domain_root != @region.get_domain_root then
             else
-              cdl_warning( "W9999 $1 in same domain", rn )
+              cdl_info( "I9999 $1: restrict calling domain to $2, which is same domain as the cell locates", @name, rp.to_s )
+              # restrict を同じドメインを指定してもよいこととする (HRP3)
+              # KernelDoamin 内のセルに対し、KernelDomain に restrict している場合、
+              # 無所属経由で結合されているが、KernelDomain から呼出すことを想定した許可
             end
           else
-            cdl_error( "S9999 $1 not region", region )
+            cdl_error( "S9999 $1 not region", rp.to_s )
           end
         }
       }
@@ -2982,6 +3097,7 @@ class Cell < NSBDNode # < Nestable
 
   #=== Cell#callable?
   def callable?( callee_cell, entry_name, func_name )
+    # p "callable? #{@name}"
     res = callee_cell.callable_from?( entry_name, func_name, self )
     dbgPrint "callable? #{callee_cell.get_namespace_path}.#{entry_name}.#{func_name} from #{@NamespacePath} is #{res}\n"
     return res
@@ -2989,26 +3105,60 @@ class Cell < NSBDNode # < Nestable
 
   #=== Cell#callable_from? (private)
   def callable_from?( entry_name, func_name, caller_cell )
+    @b_restrict_referenced = true
     if @restrict_list.length == 0 then
       return true
     end
 
+    dr = caller_cell.get_region.get_domain_root
     if @restrict_list[entry_name] then
-      if @restrict_list[entry_name][nil] &&
-         @restrict_list[entry_name][nil].include?( caller_cell.get_region.get_domain_root.get_name )then
-        return true
-      end
-      if @restrict_list[entry_name][func_name] &&
-         @restrict_list[entry_name][func_name].include?( caller_cell.get_region.get_domain_root.get_name )then
-        return true
+      if @restrict_list[entry_name][func_name] then
+        @restrict_list2[entry_name][func_name].each{ |region|
+          if dr == region then
+            return true
+          end
+        }
+      elsif @restrict_list[entry_name][nil] then
+        @restrict_list2[entry_name][nil].each{ |region|
+          if dr == region then
+            return true
+          end
+        }
       else
         return false
       end
     else
-      return true
+      return false
     end
   end
-  
+
+  #=== Cell#get_callable_regions( entry_name, func_name )
+  # func_name=nil の場合、entry_name の可否をチェック数る
+  # nil が返る場合、制限されていないことを意味する
+  def get_restricted_regions( entry_name, func_name )
+    # p "get_restricted_regions #{@name}"
+    @b_restrict_referenced = true
+    if @restrict_list[entry_name] then
+      if @restrict_list[entry_name][func_name] then
+        return @restrict_list2[entry_name][func_name]
+      else
+        return @restrict_list2[entry_name][nil]
+      end
+    end
+    return nil
+  end
+
+  #=== Cell#has_ineffective_restrict_specifier
+  # restrict 指定子が指定されていて、参照されていない場合 true
+  # 参照は、HRPSVCPlugin のみ
+  def has_ineffective_restrict_specifier
+    if @restrict_list.length != 0 && @b_restrict_referenced == false then
+      return true
+    else
+      return false
+    end
+  end
+
   def show_tree( indent )
     indent.times { print "  " }
     puts "Cell: name: #{@name} in_composite: #{@in_composite} def: #{@b_defined} ref: #{@f_ref} cloned: #{@f_cloned}"
@@ -3068,7 +3218,8 @@ end
 class CompositeCelltype < NSBDNode # < Nestable
 # @name:: str
 # @global_name:: str
-# @cell_list:: NamedList   Cell
+# @cell_list_in_composite:: NamedList   Cell
+# @cell_list::Array :: [ Cell ] : cell of CompositeCelltype's cell
 # @export_name_list:: NamedList : CompositeCelltypeJoin
 # @port_list:: CompositeCelltypeJoin[]
 # @attr_list:: CompositeCelltypeJoin[]
@@ -3078,10 +3229,15 @@ class CompositeCelltype < NSBDNode # < Nestable
 # @real_active:: bool : has active cell in this composite celltype
 # @name_list:: NamedList item: Decl (attribute), Port エクスポート定義
 # @internal_allocator_list:: [ [cell, internal_cp_name, port_name, func_name, param_name, ext_alloc_ent], ... ]
+# @generate:: [ Symbol, String, Plugin ]  = [ PluginName, option, Plugin ] Plugin は生成後に追加される
+# @generate_list:: [ [ Symbol, String, Plugin ], ... ]   generate 文で追加された generate
 
   @@nest_stack_index = -1
   @@nest_stack = []
   @@current_object = nil
+
+  include CelltypePluginModule
+  include PluginModule
 
   def self.push
     @@nest_stack_index += 1
@@ -3100,7 +3256,8 @@ class CompositeCelltype < NSBDNode # < Nestable
   def initialize( name )
     super()
     @name = name
-    @cell_list = NamedList.new( nil, "in composite celltype #{name}" )
+    @cell_list_in_composite = NamedList.new( nil, "in composite celltype #{name}" )
+    @cell_list = []
     @export_name_list = NamedList.new( nil, "export in composite celltype #{name}" )
     @name_list = NamedList.new( nil, "in composite celltype #{name}" )
     @@current_object = self
@@ -3121,6 +3278,7 @@ class CompositeCelltype < NSBDNode # < Nestable
     @port_list = []
     @attr_list = []
     @internal_allocator_list = []
+    @generate_list = []
     set_specifier_list( Generator.get_statement_specifier )
   end
 
@@ -3131,7 +3289,6 @@ class CompositeCelltype < NSBDNode # < Nestable
 
   # CompositeCelltype#end_of_parse
   def end_of_parse
-
     # singleton に関するチェック
     if @b_singleton && @real_singleton == nil then
       cdl_warning( "W1004 $1 : specified singleton but has no singleton in this celltype" , @name )
@@ -3172,7 +3329,7 @@ class CompositeCelltype < NSBDNode # < Nestable
     # mikan relay が正しく抜けているかチェックされていない
 
     # callback 結合
-    @cell_list.get_items.each{ |c|
+    @cell_list_in_composite.get_items.each{ |c|
       ct = c.get_celltype
       if ct then
         c.create_reverse_join
@@ -3180,12 +3337,12 @@ class CompositeCelltype < NSBDNode # < Nestable
     }
 
     # 意味解析
-    @cell_list.get_items.each{ |c|
+    @cell_list_in_composite.get_items.each{ |c|
       c.set_definition_join
     }
 
     # cell の未結合の呼び口がないかチェック
-    @cell_list.get_items.each{ |c|
+    @cell_list_in_composite.get_items.each{ |c|
       c.check_join
       c.check_reverse_require
     }
@@ -3223,17 +3380,22 @@ class CompositeCelltype < NSBDNode # < Nestable
         end
       }
     }
+
+    # composite プラグイン
+    if @generate then
+      celltype_plugin
+    end
   end
 
- ### cell (CompositeCelltype)
-  def self.new_cell( cell )
-    @@current_object.new_cell( cell )
+ ### CompositeCelltype#new_cell_in_composite
+  def self.new_cell_in_composite( cell )
+    @@current_object.new_cell_in_composite( cell )
 
   end
 
-  def new_cell( cell )
+  def new_cell_in_composite( cell )
     cell.set_owner self  # Cell (in_omposite)
-    @cell_list.add_item( cell )
+    @cell_list_in_composite.add_item( cell )
     if cell.get_celltype then    # nil ならば、すでにセルタイプなしエラー
       if cell.get_celltype.is_singleton? then
         @real_singleton = cell
@@ -3250,6 +3412,14 @@ class CompositeCelltype < NSBDNode # < Nestable
     @@current_object.new_join( export_name, internal_cell_name,
 					 internal_cell_elem_name, type )
     
+  end
+
+ ### CompositeCelltype#new_cell
+  def new_cell cell
+    @cell_list << cell
+
+    # セルタイププラグインの適用
+    celltype_plugin_new_cell cell
   end
 
   #=== CompositeCelltype# CompositeCelltypeJoin を作成
@@ -3269,7 +3439,7 @@ class CompositeCelltype < NSBDNode # < Nestable
 
     dbgPrint "new_join: #{export_name} #{internal_cell_name} #{internal_cell_elem_name}\n"
 
-    cell = @cell_list.get_item( internal_cell_name )
+    cell = @cell_list_in_composite.get_item( internal_cell_name )
     if cell == nil then
       cdl_error( "S1057 $1 not found in $2" , internal_cell_name, @name )
       return
@@ -3515,7 +3685,7 @@ class CompositeCelltype < NSBDNode # < Nestable
 
   def find name
     dbgPrint "CompositeCelltype: find in composite: #{name}\n"
-    cell = @cell_list.get_item( name )
+    cell = @cell_list_in_composite.get_item( name )
     return cell if cell
 
     dbgPrint "CompositeCelltype: #{name}, #{@name_list.get_item( name )}\n"
@@ -3559,7 +3729,7 @@ class CompositeCelltype < NSBDNode # < Nestable
     clone_cell_list3 = {}
 
     #  composite 内部のすべての cell について
-    @cell_list.get_items.each { |c|
+    @cell_list_in_composite.get_items.each { |c|
 
       # debug
       dbgPrint "expand : cell #{c.get_name}\n"
@@ -3649,6 +3819,11 @@ class CompositeCelltype < NSBDNode # < Nestable
         cdl_warning( "W1005 $1 : idx_is_id is ineffective for composite celltype" , @name )
       when :ACTIVE
         @b_active = true
+      when :GENERATE
+        if @generate then
+          cdl_error( "S9999 generate specifier duplicate"  )
+        end
+        @generate = [ s[1], s[2] ] # [ PluginName, "option" ]
       else
         cdl_error( "S1071 $1 cannot be specified for composite" , s[0] )
       end
@@ -3657,6 +3832,10 @@ class CompositeCelltype < NSBDNode # < Nestable
 
   def get_name
     @name
+  end
+
+  def get_global_name
+    @global_name
   end
 
   def get_port_list
@@ -3673,6 +3852,18 @@ class CompositeCelltype < NSBDNode # < Nestable
 
   def get_internal_allocator_list
     @internal_allocator_list
+  end
+
+  #== CompositeCelltype#get_real_celltype
+  # port_name に接続されている内部のセルタイプを得る
+  def get_real_celltype( port_name )
+    cj = find_export port_name
+    inner_celltype = cj.get_cell.get_celltype
+    if inner_celltype.instance_of? CompositeCelltype then
+      return inner_celltype.get_real_celltype
+    else
+      return inner_celltype
+    end
   end
 
   #== CompositeCelltype# generate 指定子の情報
@@ -3695,7 +3886,7 @@ class CompositeCelltype < NSBDNode # < Nestable
   # （内部のセルが active または factory を持っている）
   def is_inactive?
     if @b_active == false then
-      @cell_list.get_items.each{ |c|
+      @cell_list_in_composite.get_items.each{ |c|
         if c.get_celltype && c.get_celltype.is_inactive? == false then
           # c.get_celltype == nil の場合はセルタイプ未定義ですでにエラー
           return false
@@ -3716,7 +3907,7 @@ class CompositeCelltype < NSBDNode # < Nestable
     puts "CompositeCelltype: name: #{@name}"
     (indent+1).times { print "  " }
     puts "active: #{@b_active}, singleton: #{@b_singleton}"
-    @cell_list.show_tree( indent + 1 )
+    @cell_list_in_composite.show_tree( indent + 1 )
     (indent+1).times { print "  " }
     puts "name_list"
     @name_list.show_tree( indent + 2 )
@@ -3886,7 +4077,7 @@ class Port < BDNode
       @only_callee_cell = nil                    # 唯一の呼び先セル
     else
       # entry port optimize
-      if $unopt then
+      if $unopt || $unopt_entry then
         # 最適化なし
         @b_VMT_useless = false                     # VMT 不要 (true の時 VMT を介することなく呼出す)
         @b_skelton_useless = false                 # スケルトン関数不要   (true の時、受け口関数を呼出す)
@@ -4210,11 +4401,23 @@ end
   end
 
   def is_VMT_useless?                     # VMT 関数テーブルを使用しない
-   @b_VMT_useless
+    if @port_type == :ENTRY && $unopt_entry == true then
+      # プラグインから $unopt_entry を設定するケースのため
+      # ここで読み出すときに、false を返す (reset_optimize での設定変更は速すぎる)
+      return false
+    else
+      return @b_VMT_useless
+    end
   end
 
   def is_skelton_useless?                 # スケルトン関数不要   (true の時、受け口関数を呼出す)
-    @b_skelton_useless
+    if @port_type == :ENTRY && $unopt_entry == true then
+      # プラグインから $unopt_entry を設定するケースのため
+      # ここで読み出すときに、false を返す (reset_optimize での設定変更は速すぎる)
+      return false
+    else
+      return @b_skelton_useless
+    end
   end
 
   def is_cell_unique?                     # 呼び先のセルは一つ？
@@ -4751,16 +4954,19 @@ class Namespace < NSBDNode
     @cell_list.each { |c|
       if ! c.get_f_def then   # Namespace の @cell_list にはプロトタイプが含まれるケースあり
         if c.get_f_ref then
-          cdl_error( "S1093 $1 : undefined cell" , c.get_namespace_path.get_path_str )
+          c.cdl_error( "S1093 $1 : undefined cell" , c.get_namespace_path.get_path_str )
         elsif $verbose then
-          cdl_warning( "W1006 $1 : only prototype, unused and undefined cell" , c.get_namespace_path.get_path_str )
+          c.cdl_warning( "W1006 $1 : only prototype, unused and undefined cell" , c.get_namespace_path.get_path_str )
         end
       else
         dbgPrint "check_ref_but_undef: #{c.get_global_name}\n"
         ct = c.get_celltype
         # if c.get_f_ref == false && c.is_generate? && ct && ct.is_inactive? then
         if c.get_f_ref == false && ct && ct.is_inactive? then
-          cdl_warning( "W1007 $1 : non-active cell has no entry join and no factory" , c.get_namespace_path.get_path_str )
+          c.cdl_warning( "W1007 $1 : non-active cell has no entry join and no factory" , c.get_namespace_path.get_path_str )
+        end
+        if c.has_ineffective_restrict_specifier then
+          c.cdl_warning( "W9999: $1 has ineffective restrict specifier", c.get_namespace_path.get_path_str )
         end
       end
     }
@@ -4955,6 +5161,29 @@ class Namespace < NSBDNode
     @@root_namespace
   end
 
+  #== Namespace に属するシグニチャのリスト
+  def get_signature_list
+    @signature_list
+  end
+
+  #== Namespace# 子ネームスペースのリスト
+  #
+  def get_namespace_list
+    @namespace_list
+  end
+
+  #== Namespace (Region) に属するセルのリスト
+  def get_cell_list
+    @cell_list
+  end
+
+  #== Namespace (Region)# 子リージョンのリスト
+  #
+  # リージョンは Namespace クラスで namespace として記憶されている
+  def get_region_list
+    @namespace_list
+  end
+  
   def show_tree( indent )
     indent.times { print "  " }
     puts "#{self.class}: name: #{@name} path: #{get_namespace_path.get_path_str}"
@@ -5551,6 +5780,7 @@ class Join < BDNode
         begin
           next_cell_nsp       = @through_generated_list[ i + 1 ].get_cell_namespace_path
           next_port_name      = @through_generated_list[ i + 1 ].get_through_entry_port_name
+          next_port_subscript = @through_generated_list[ i + 1 ].get_through_entry_port_subscript
         rescue Exception => evar
           cdl_error( "S1124 $1: plugin function failed: \'get_through_entry_port_name\'" , plugin_name )
           print_exception( evar )
@@ -5569,6 +5799,7 @@ class Join < BDNode
         # 最後のセルの場合、次のセルの名前、ポート名
         next_cell      = @cell
         next_port_name = @port_name
+        next_port_subscript = @rhs_subscript
 
         if next_cell == nil then
           # 結合先がない
@@ -5580,7 +5811,7 @@ class Join < BDNode
         # region_through_list 部分
         # region から @cell_name.@port_name への through がないか探す
         # rp = @through_list[i][3].find_cell_port_through_plugin( @cell_name, @port_name ) #762
-        rp = @through_list[i][3].find_cell_port_through_plugin( @cell.get_global_name, @port_name )
+        rp = @through_list[i][3].find_cell_port_through_plugin( @cell.get_global_name, @port_name, @rhs_subscript )
            # @through_list[i] と @region_through_list[i-cp_len] は同じ
         # 共用しないようにするには、見つからなかったことにすればよい
         # rp = nil
@@ -5593,7 +5824,7 @@ class Join < BDNode
       if rp == nil then
         plClass = load_plugin( plugin_name, ThroughPlugin )
         if( plClass ) then
-          gen_through_cell_code_and_parse( plugin_name, i, next_cell, next_port_name, plClass )
+          gen_through_cell_code_and_parse( plugin_name, i, next_cell, next_port_name, next_port_subscript, plClass )
         end
       else
         # 見つかったものを共用する
@@ -5606,7 +5837,7 @@ class Join < BDNode
         if rp == nil then
           # 生成したものを region(@through_list[i][3]) のリストに追加
           # @through_list[i][3].add_cell_port_through_plugin( @cell_name, @port_name, @through_generated_list[i] ) #762
-          @through_list[i][3].add_cell_port_through_plugin( @cell.get_global_name, @port_name, @through_generated_list[i] )
+          @through_list[i][3].add_cell_port_through_plugin( @cell.get_global_name, @port_name, @rhs_subscript, @through_generated_list[i] )
         end
       end
 
@@ -5640,7 +5871,7 @@ class Join < BDNode
   end
 
   #=== Join# through プラグインを呼び出して CDL 生成させるとともに、import する
-  def gen_through_cell_code_and_parse( plugin_name, i, next_cell, next_port_name, plClass )
+  def gen_through_cell_code_and_parse( plugin_name, i, next_cell, next_port_name, next_port_subscript, plClass )
 
     through = @through_list[ i ]
     plugin_name           = through[ 0 ]
@@ -5667,7 +5898,9 @@ class Join < BDNode
     caller_cell = @owner
 
     begin
-      plugin_object = plClass.new( "#{generating_cell_name}".to_sym, plugin_arg.to_s, next_cell, "#{next_port_name}".to_sym, @definition.get_signature, @celltype, caller_cell )
+      plugin_object = plClass.new( generating_cell_name.to_sym, plugin_arg.to_s,
+                                   next_cell, next_port_name.to_sym, next_port_subscript,
+                                   @definition.get_signature, @celltype, caller_cell )
       plugin_object.set_locale @locale
     rescue Exception => evar
       cdl_error( "S1126 $1: fail to new" , plugin_name )
@@ -5862,7 +6095,14 @@ class Join < BDNode
     @rhs
   end
 
-  def get_rhs_subscript
+  # 末尾数字1 : CDL で指定された、右辺のセルを返す
+  def get_rhs_cell1   # get_cell と同じ
+    @cell
+  end
+  def get_rhs_port1   # get_port_name 同じ
+    @port_name
+  end
+  def get_rhs_subscript1
     @rhs_subscript
   end
 
@@ -5872,15 +6112,25 @@ class Join < BDNode
   def get_rhs_port
     # through 指定あり？
     if @through_list[0] then
-      # mikan through で生成したものが root namespace 限定
       # through で生成されたセルを探す
-#      cell = Namespace.find( [ "::", @through_generated_list[0].get_cell_name.to_sym ] )    #1
       cell = Namespace.find( @through_generated_list[0].get_cell_namespace_path )    #1
       # cell のプラグインで生成されたポート名のポートを探す (composite なら内部の繋がるポート)
       return cell.get_real_port( @through_generated_list[0].get_through_entry_port_name )
     else
       # ポートを返す(composite なら内部の繋がるポートを返す)
       return @cell.get_real_port( @port_name )
+    end
+  end
+
+  #=== Join# 右辺の配列添数を得る
+  #    右辺が through の場合は挿入されたセルの添数
+  #    右辺が composite の場合は、内部の繋がるセルのポートの添数 (composite では変わらない)
+  #    このメソッドは get_rhs_cell,  と対になっている
+  def get_rhs_subscript
+    if @through_list[0] then
+      return @through_generated_list[0].get_through_entry_port_subscript
+    else
+      return @rhs_subscript
     end
   end
 
@@ -6518,7 +6768,7 @@ class Factory < BDNode
   end
 end
 
-#== Domain
+#== DomainType
 #
 # region の domain を記憶するクラス
 class DomainType < Node
@@ -6557,6 +6807,7 @@ class DomainType < Node
       pluginClass = Object.const_get @plugin_name
       return if pluginClass == nil
       @plugin = pluginClass.new( @region, @name, @option )
+      @plugin.set_locale @locale
     end
   end
 
@@ -6574,7 +6825,7 @@ class DomainType < Node
     @name
   end
 
-  #== Domain リージョンの Hash を得る
+  #== DomainType リージョンの Hash を得る
   # @@domain_regions の説明参照
   def self.get_domain_regions
     return @@domain_regions
@@ -6586,6 +6837,12 @@ class DomainType < Node
 
   def get_option
     @option
+  end
+
+  #== DomainType#ドメイン種別を得る
+  #return::Symbol :kernel, :user, :OutOfDomain
+  def get_kind
+    @plugin.get_kind
   end
 
   def show_tree( indent )
@@ -6647,6 +6904,7 @@ class Region < Namespace
     @region_type_param  = @@region_type_param
 
     if @@domain_name then
+      dbgPrint "Region=#{name} domain_type=#{@@domain_name} option=#{@@domain_option}\n"
       domain_option = CDLString.remove_dquote @@domain_option.to_s
       @domain_type = DomainType.new( self, @@domain_name, domain_option )
       @@domain_name       = nil
@@ -6895,6 +7153,12 @@ class Region < Namespace
     @name
   end
 
+  #== Region# ルートリージョン
+  # ルートリージョンは、namespace のルートと同じインスタンス
+  def selfget_root
+    Namespace.get_root
+  end
+
   def next_in_through_count
     @in_through_count += 1
   end
@@ -6928,12 +7192,18 @@ class Region < Namespace
 
   #=== Region# through プラグインで、この region から cell_name.port_name へのプラグインオブジェクトを登録
   # mikan namesppace 対応 (cell_name)
-  def add_cell_port_through_plugin( cell_name, port_name, through_plugin_object )
-    @cell_port_throug_plugin_list[ "#{cell_name}.#{port_name}" ] = through_plugin_object
+  def add_cell_port_through_plugin( cell_name, port_name, subscript, through_plugin_object )
+    if subscript then
+      subscript = '[' + subscript.to_s + ']'
+    end
+    @cell_port_throug_plugin_list[ "#{cell_name}.#{port_name}#{subscript}" ] = through_plugin_object
   end
 
-  def find_cell_port_through_plugin( cell_name, port_name )
-    return @cell_port_throug_plugin_list[ "#{cell_name}.#{port_name}" ]
+  def find_cell_port_through_plugin( cell_name, port_name, subscript )
+    if subscript then
+      subscript = '[' + subscript.to_s + ']'
+    end
+    return @cell_port_throug_plugin_list[ "#{cell_name}.#{port_name}#{subscript}" ]
   end
 
   def create_domain_plugin
@@ -7500,9 +7770,10 @@ class Generate < Node
 
     dbgPrint "generate: #{plugin_name} #{object_nsp.to_s} option=#{option}\n"
 
-    object = Namespace.find( object_nsp ) #mikan Namespace   #1
+    object = Namespace.find( object_nsp )
     if object.kind_of?( Signature ) ||
        object.kind_of?( Celltype ) ||
+       object.kind_of?( CompositeCelltype ) ||
        object.kind_of?( Cell )then
       @plugin_object = object.apply_plugin( @plugin_name, @option )
     elsif object then

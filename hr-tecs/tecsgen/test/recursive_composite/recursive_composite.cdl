@@ -154,7 +154,7 @@ celltype tCell_serv {
   };
 };
 
-[singleton]
+[active, singleton]
 celltype tCell_clnt {
   call sSig1 cCall[2];
   attr {

@@ -3,13 +3,13 @@
  * tecsmerge によるマージに使用されます
  *
  * 呼び口関数 #_TCPF_#
- * call port: cCall signature: sSample context:task 
+ * call port: cCall signature: sSample context:task
  *   ER             cCall_sayHello( int32_t times );
  *   ER             cCall_howAreYou( char_t* buf, int32_t len );
  *   ER             cCall_giftToYou( char_t* buf, int32_t len );
  *   ER             cCall_returnGiftFromYou( int16_t** buf, int32_t* len );
- *   ER             cCall_transferStruct( const struct stA * a, int32_t len );
- *   ER             cCall_transferStruct2( struct stA  a );
+ *   ER             cCall_transferStruct( const struct stA* a, int32_t len );
+ *   ER             cCall_transferStruct2( struct stA a );
  *   ER             cCall_transferInArray( int8_t array0[8] );
  *   ER             cCall_transferInArray2( const int8_t(* array1)[8] );
  *   ER             cCall_transferOutArray( int8_t(* array2)[8] );
@@ -54,12 +54,13 @@
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
 void
-eBody_main()
+eBody_main(CELLIDX idx)
 {
 	char     buf[256];
 	char_t   *allocbuf;
 	int16_t  *allocbuf2;
 	int32_t  i, len;
+	CELLCB   *p_cellcb = GET_CELLCB( idx );
 
 #define N_HELLO 3
 	printf( "Simple: Say hello %d times.\n", N_HELLO );
@@ -158,7 +159,7 @@ eBody_main()
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayPtr(const uint32_t* in)
+eSimple_onewayPtr(CELLIDX idx, const uint32_t* in)
 {
 	printf( "eSimple_onewayPtr: *in=%d\n", *in );
 	return	E_OK;
@@ -170,7 +171,7 @@ eSimple_onewayPtr(const uint32_t* in)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayArray(const uint32_t* in, int32_t len)
+eSimple_onewayArray(CELLIDX idx, const uint32_t* in, int32_t len)
 {
 	int   i;
 	printf( "eSimple_onewayArray: len=%d\n", len );
@@ -188,7 +189,7 @@ eSimple_onewayArray(const uint32_t* in, int32_t len)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayDoubleArray(const int32_t* in, int32_t len, const int32_t* in2, int32_t len2)
+eSimple_onewayDoubleArray(CELLIDX idx, const int32_t* in, int32_t len, const int32_t* in2, int32_t len2)
 {
 	int   i;
 	printf( "eSimple_onewayDoubleArray: len=%d, len2=%d\n", len, len2 );
@@ -214,7 +215,7 @@ eSimple_onewayDoubleArray(const int32_t* in, int32_t len, const int32_t* in2, in
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayStringArray(const char_t** in, int32_t len)
+eSimple_onewayStringArray(CELLIDX idx, const char_t** in, int32_t len)
 {
 	int32_t   i;
 	for( i = 0; i < len; i++ )
@@ -228,7 +229,7 @@ eSimple_onewayStringArray(const char_t** in, int32_t len)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayString(const char_t* in, int32_t len)
+eSimple_onewayString(CELLIDX idx, const char_t* in, int32_t len)
 {
 	printf( "eSimple_onewayString: len=%d\n", len );
 	puts( in );
@@ -241,7 +242,7 @@ eSimple_onewayString(const char_t* in, int32_t len)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayStruct(const struct stA * a)
+eSimple_onewayStruct(CELLIDX idx, const struct stA* a)
 {
 	printf( "eSimple_onewayStruct:\n" );
 	printf( " a->a=%d, a->b=%d\n", a->a, a->b );
@@ -254,7 +255,7 @@ eSimple_onewayStruct(const struct stA * a)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayStruct2(const struct stA * a, int32_t len)
+eSimple_onewayStruct2(CELLIDX idx, const struct stA* a, int32_t len)
 {
 	int  i;
 
@@ -270,7 +271,7 @@ eSimple_onewayStruct2(const struct stA * a, int32_t len)
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayInArray(int8_t array0[8])
+eSimple_onewayInArray(CELLIDX idx, int8_t array0[8])
 {
 	int_t	i;
 	syslog( LOG_INFO, "eSimple_onewayInArray" );
@@ -285,7 +286,7 @@ eSimple_onewayInArray(int8_t array0[8])
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayInArray2(const int8_t(* array1)[8])
+eSimple_onewayInArray2(CELLIDX idx, const int8_t(* array1)[8])
 {
 	int_t	i;
 	syslog( LOG_INFO, "eSimple_onewayInArray2" );
@@ -300,7 +301,7 @@ eSimple_onewayInArray2(const int8_t(* array1)[8])
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 ER
-eSimple_onewayNulable(const int8_t(* array)[3])
+eSimple_onewayNulable(CELLIDX idx, const int8_t(* array)[3])
 {
 	if( array ){
 		printf( "eSimple_onewayNulable array[3]={ %d, %d, %d }\n", (*array)[0], (*array)[1], (*array)[2] );
@@ -315,7 +316,7 @@ eSimple_onewayNulable(const int8_t(* array)[3])
  * oneway:       true
  * #[</ENTRY_FUNC>]# */
 void
-eSimple_exit()
+eSimple_exit(CELLIDX idx)
 {
 	pthread_exit(0);
 }

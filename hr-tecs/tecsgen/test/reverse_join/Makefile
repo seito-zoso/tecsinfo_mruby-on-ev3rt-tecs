@@ -82,6 +82,21 @@ $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN_EXE)  -I ../cygwin reverse_join.cdl
 	touch $(TIMESTAMP)
 
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecs
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
+
 # generic target for objs
 $(_TECS_OBJ_DIR)%.o : %.c
 	$(CC) -c $(CFLAGS) -o $@ $<

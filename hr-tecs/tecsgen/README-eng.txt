@@ -31,8 +31,7 @@ Bug report
 Preparation
 
   TECS generator is implemented using Ruby. So you have to install
-  Ruby interpreter. But if you use exerb version of tecsgen on Windows
-  based system, installing ruby is unnecessary.
+  Ruby interpreter.
 
 Platforms where tecsgen runs
 
@@ -48,7 +47,10 @@ Install tecsgen
   You can get TECS generator from svn repository (TOPPERS member only)
   or package from TECS homepage in TOPPERS project's HP.
 
-Setting Environment Variable
+Setting Environment Variables
+
+  If you use TECS generator with TOPPERS/ASP3 or TOPPERS/HRP3 packages,
+  you don't have to set environment varibales.
 
   Add PATH to the directory where tecsgen is placed.
   Set TECSPATH where tecsgen/tecs is placed. This is necessary when

@@ -2,7 +2,7 @@
 #
 #  mruby => TECS bridge
 #  
-#   Copyright (C) 2008-2015 by TOPPERS Project
+#   Copyright (C) 2008-2017 by TOPPERS Project
 #
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
 #   ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -33,7 +33,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: MrubyBridgePlugin.rb 2633 2017-04-02 06:02:05Z okuma-top $
+#   $Id: MrubyBridgePlugin.rb 2952 2018-05-07 10:19:07Z okuma-top $
 #
 
 #== MrubyBridgePlugin クラス
@@ -48,6 +48,10 @@ class MrubyBridgePlugin < MultiPlugin
       dbgPrint "MrubyBridgePlugin: CelltypePlugin"
       require_tecsgen_lib 'tecslib/plugin/MrubyBridgeCelltypePlugin.rb'
       return MrubyBridgeCelltypePlugin
+    elsif superClass == CompositePlugin
+      dbgPrint "MrubyBridgePlugin: CompositePlugin"
+      require_tecsgen_lib 'tecslib/plugin/MrubyBridgeCompositePlugin.rb'
+      return MrubyBridgeCompositePlugin
     elsif superClass == CellPlugin
       dbgPrint "MrubyBridgePlugin: CellPlugin"
       require_tecsgen_lib 'tecslib/plugin/MrubyBridgeCellPlugin.rb'

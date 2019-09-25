@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: OpaqueRPCPlugin.rb 2061 2014-05-31 22:15:33Z okuma-top $
+#   $Id: OpaqueRPCPlugin.rb 2952 2018-05-07 10:19:07Z okuma-top $
 #++
 
 # 以下を仮定（制限事項）
@@ -55,7 +55,7 @@ class OpaqueRPCPlugin < ThroughPlugin
 
   #=== RPCPlugin の initialize
   #  説明は ThroughPlugin (plugin.rb) を参照
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
     super
     @b_noClientSemaphore = false
     initialize_opaque_marshaler
@@ -253,6 +253,11 @@ EOT
     ##### サーバー側のセルの生成 #####
     nest = @end_region.gen_region_str_pre file
     nest_str = "  " * nest
+    if @next_cell_port_subscript then
+      subscript = '[' + @next_cell_port_subscript.to_s + ']'
+    else
+      subscript = ""
+    end
 
     if @serverErrorHandler then
       serverErrorHandler_str = "#{nest_str}    cErrorHandler = #{@serverErrorHandler};\n"
@@ -281,7 +286,7 @@ EOT
 #{nest_str}  //  Unmarshaler
 #{nest_str}  cell #{@rpc_server_channel_celltype_name} #{@serverChannelCell}_Unmarshaler {
 #{nest_str}    cChannel = #{@serverChannelCell}.eC1;
-#{nest_str}    #{@call_port_name} = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name};
+#{nest_str}    #{@call_port_name} = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name}#{subscript};
 #{serverErrorHandler_str}#{nest_str}  };
 EOT
 

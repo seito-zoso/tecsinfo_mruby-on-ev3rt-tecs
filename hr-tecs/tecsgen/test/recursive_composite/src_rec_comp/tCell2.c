@@ -3,8 +3,8 @@
 /* 呼び口関数 */
 /*
  * call port : cCall2  signature: sSig3
- *   tecs_int32 cCall2_func1( THIS, tecs_int32 a );
- *   tecs_int32 cCall2_func2( THIS, tecs_int32 a );
+ *   int32_t cCall2_func1( THIS, int32_t a );
+ *   int32_t cCall2_func2( THIS, int32_t a );
  */
 
 /* 受け口関数 */
@@ -16,7 +16,7 @@
  * name:         eEntry2_func1
  * global_name:  tCell2_eEntry2_func1
  */
-tecs_int32 eEntry2_func1( tCell2_IDX idx, tecs_int32 a)
+int32_t eEntry2_func1( tCell2_IDX idx, int32_t a)
 {
   CELLCB      *p_cellcb;
   if( VALID_IDX( idx ) ){
@@ -34,7 +34,7 @@ tecs_int32 eEntry2_func1( tCell2_IDX idx, tecs_int32 a)
  * name:         eEntry2_func2
  * global_name:  tCell2_eEntry2_func2
  */
-tecs_int32 eEntry2_func2( tCell2_IDX idx, tecs_int32 a)
+int32_t eEntry2_func2( tCell2_IDX idx, int32_t a)
 {
   CELLCB      *p_cellcb;
   if( VALID_IDX( idx ) ){

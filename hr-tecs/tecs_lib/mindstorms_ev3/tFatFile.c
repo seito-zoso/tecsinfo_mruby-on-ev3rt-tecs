@@ -13,6 +13,7 @@
  * fs               FIL              VAR_fs
  * br               UINT             VAR_br
  * read_buff        TCHAR [100]      VAR_read_buff
+ * fatfs            FATFS            VAR_fatfs
  *
  * #[</PREAMBLE>]# */
 
@@ -51,13 +52,17 @@ eFatFile_fopen(CELLIDX idx, const TCHAR* path, const TCHAR* mode)
 
 	/* ここに処理本体を記述します #_TEFB_# */
 	// 引数でModeを判別する
+	FRESULT res;
 	if(!strcmp(mode,"r")){ /* 読み込み */
-		f_open(&VAR_fs, path, FA_READ | FA_OPEN_EXISTING);
+		return f_open(&VAR_fs, path, FA_READ | FA_OPEN_EXISTING);
 	}else if(!strcmp(mode,"w")){ /* 書き込み */
-		f_open(&VAR_fs, path, FA_WRITE | FA_OPEN_ALWAYS);
+		return f_open(&VAR_fs, path, FA_WRITE | FA_OPEN_ALWAYS);
 	}else if(!strcmp(mode,"a")){ /* 追加書き込み */
-		f_open(&VAR_fs, path, FA_WRITE | FA_OPEN_ALWAYS);
-		f_lseek(&VAR_fs, f_size(&VAR_fs)); /* ファイル末尾にファイルポインタを移動させる */
+		res = f_open(&VAR_fs, path, FA_WRITE | FA_OPEN_ALWAYS);
+		if( res == FR_OK ){
+			f_lseek(&VAR_fs, f_size(&VAR_fs)); /* ファイル末尾にファイルポインタを移動させる */
+		}
+		return res;
 	}
 
 
@@ -123,6 +128,26 @@ eFatFile_fwrite(CELLIDX idx, const TCHAR* buffer, UINT btw, UINT* bw)
 	return f_write(&VAR_fs, buffer, btw, bw);
 }
 
+/* #[<ENTRY_FUNC>]# eFatFile_fgets
+ * name:         eFatFile_fgets
+ * global_name:  tFatFile_eFatFile_fgets
+ * oneway:       false
+ * #[</ENTRY_FUNC>]# */
+TCHAR*
+eFatFile_fgets(CELLIDX idx, TCHAR* buff, uint_t btr)
+{
+	CELLCB	*p_cellcb;
+	if (VALID_IDX(idx)) {
+		p_cellcb = GET_CELLCB(idx);
+	}
+	else {
+		/* エラー処理コードをここに記述します */
+	} /* end if VALID_IDX(idx) */
+
+	/* ここに処理本体を記述します #_TEFB_# */
+	return f_gets( buff, btr, &VAR_fs );
+}
+
 /* #[<ENTRY_FUNC>]# eFatFile_unlink
  * name:         eFatFile_unlink
  * global_name:  tFatFile_eFatFile_unlink
@@ -141,6 +166,27 @@ eFatFile_unlink(CELLIDX idx, const TCHAR* path)
 
 	/* ここに処理本体を記述します #_TEFB_# */
 	f_unlink(path);
+}
+
+/* #[<ENTRY_FUNC>]# eFatFile_fmount
+ * name:         eFatFile_fmount
+ * global_name:  tFatFile_eFatFile_fmount
+ * oneway:       false
+ * #[</ENTRY_FUNC>]# */
+FRESULT
+eFatFile_fmount(CELLIDX idx, const TCHAR* path, BYTE opt)
+{
+	CELLCB	*p_cellcb;
+	if (VALID_IDX(idx)) {
+		p_cellcb = GET_CELLCB(idx);
+	}
+	else {
+		/* エラー処理コードをここに記述します */
+	} /* end if VALID_IDX(idx) */
+
+	/* ここに処理本体を記述します #_TEFB_# */
+ 	return f_mount( &VAR_fatfs, path, opt );
+
 }
 
 /* #[<POSTAMBLE>]#

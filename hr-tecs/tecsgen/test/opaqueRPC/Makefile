@@ -81,6 +81,14 @@ clean :
 
 tecs : $(PRE_TECSGEN_TARGET) $(TIMESTAMP) $(POST_TECSGEN_TARGET)
 
+
+#####  TECSFlow targets  #####
+tecsflow: tecs
+	cd rClient; make tecsflow
+	cd rServer; make tecsflow
+
+#####  end TECSFlow targets  #####
+
 $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN)  -I ../cygwin opaqueRPC.cdl
 # generic target for objs

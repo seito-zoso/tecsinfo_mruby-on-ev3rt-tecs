@@ -35,7 +35,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: tecsgen_rcov.rb 2554 2016-02-27 06:11:34Z okuma-top $
+#   $Id: tecsgen_rcov.rb 2640 2017-06-03 11:27:12Z okuma-top $
 #++
 
 # カバレッジを取るための tecsgen コマンド
@@ -43,8 +43,11 @@
 #
 # Usage: tecsgen_rcov.rb [options] CDL-file.cdl
 #
+
+$:.unshift(File.dirname(__FILE__))
+
 require 'simplecov'
-SimpleCov.command_name "tecsgen#{$$}"
+SimpleCov.command_name "tecsgen#{Time.now.to_f}"
 SimpleCov.root File.dirname( File.expand_path __FILE__ )
 SimpleCov.at_exit do
   SimpleCov.result.format!

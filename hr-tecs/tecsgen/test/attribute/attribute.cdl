@@ -232,3 +232,16 @@ cell tAttribute4 Attr4 {
 /*	buf0 = { {0,0,0,0,0,0,0}, {0,0,0,0,0,0,0,0,0} }; */
 };
 
+
+celltype tAttribute5 {
+    attr {
+        int32_t size = 16;
+    };
+    var {
+        [size_is(size)]
+            char (*buf)[4];
+    };
+};
+
+cell tAttribute5 Attr5 {
+};

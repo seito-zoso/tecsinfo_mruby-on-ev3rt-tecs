@@ -1,20 +1,49 @@
 import("EV3_common.cdl");
+import("TECSInfo.cdl");
+
 
 celltype tTaskMain {
 	entry sTaskBody eBody;
 
 };
 
+celltype tTECSInfoMain {
+	entry sTaskBody	eBody;
+	call sLCD cLCD;
+
+  /* TECSInfo */
+  call  nTECSInfo::sTECSInfo cTECSInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sNamespaceInfo cNSInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sRegionInfo    cRegionInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sCellInfo      cCellInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sSignatureInfo cSignatureInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sCelltypeInfo  cCelltypeInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sVarDeclInfo   cVarDeclInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sTypeInfo      cTypeInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sFunctionInfo  cFunctionInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sParamInfo     cParamInfo;
+  [dynamic,optional]
+      call  nTECSInfo::sEntryInfo     cEntryInfo;
+};
 //[domain(HRP2, "trusted")]
 //[domain(HRP2, "nontrusted")]
 region rDomainEV3 {
-	cell tTaskMain TaskMain {
+	// cell tTaskMain TaskMain {
 
-	};
-
+	// };
 	cell tTask Task {
 	// 呼び口の結合
-		cBody = TaskBody.eBody;
+		// cBody = TaskMain.eBody;
+		cBody = TECSInfoMain.eBody;
 		//* 属性の設定
 		taskAttribute 	= C_EXP("TA_ACT");
 		priority 		= C_EXP("EV3_MRUBY_VM_PRIORITY");
@@ -22,4 +51,24 @@ region rDomainEV3 {
 		//userStackSize = C_EXP("STACK_SIZE");
 	};
 
+	/* TECSInfo */
+	cell tTECSInfoMain TECSInfoMain {
+    cTECSInfo  = TECSInfo.eTECSInfo;
+		cLCD = LCD.eLCD;
+	};
+	// cell tCyclicTask TECSInfoTask {
+	// // 呼び口の結合
+	// 	cBody = TECSInfoMain.eBody;
+	// 	//* 属性の設定
+	// 	cyclicAttribute 	= C_EXP("TA_STA");
+	// 	cyclicTime = 10; // 0.01秒
+	// 	priority = C_EXP("EV3_MRUBY_VM_PRIORITY - 1");
+	// 	stackSize = C_EXP("MRUBY_VM_STACK_SIZE"); // systemstacksizeでなくていいのか。kernel.cdlも書き換えなければ
+	// 	//userStackSize = C_EXP("STACK_SIZE");
+	// };
+/****** TECSInfo cell ******/
+  cell nTECSInfo::tTECSInfo TECSInfo {
+      // cTECSInfo = rTECSInfo::TECSInfoSub.eTECSInfo;
+      //  この結合は TECSInfoPlugin により生成されるので結合不要
+  };
 };

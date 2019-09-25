@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: CelltypePlugin.rb 2635 2017-04-16 02:37:16Z okuma-top $
+#   $Id: CelltypePlugin.rb 2952 2018-05-07 10:19:07Z okuma-top $
 #++
 
 #== celltype プラグインの共通の親クラス
@@ -55,9 +55,6 @@ class CelltypePlugin < Plugin
   #
   # celltype プラグインを指定されたセルタイプのセルが生成された
   # セルタイププラグインに対する新しいセルの報告
-  # セルタイプの generate 指定子の場合のみ、このメソッドが呼び出される
-  # ジェネレート文でセルタイププラグインが呼びだされた場合、このメソッドは呼び出されない
-  # gen_cdl_file のタイミングで、全セルリスト(plugin_post_code生成を除く)が含まれている
   def new_cell( cell )
   end
 

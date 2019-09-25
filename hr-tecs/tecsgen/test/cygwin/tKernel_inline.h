@@ -4,8 +4,10 @@
  *
  * #[</PREAMBLE>]# */
 
+#ifndef TECSGEN
 #include <sys/time.h>
 #include <sys/unistd.h>
+#endif /* TECSGEN */
 
 /* 受け口関数 #_TEPF_# */
 /* #[<ENTRY_PORT>]# eKernel

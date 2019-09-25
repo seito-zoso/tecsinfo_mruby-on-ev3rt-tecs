@@ -5,7 +5,7 @@
 
 TECSCDE - TECS Component Diagram Editor
 
-Copyright (C) 2014-2015 by TOPPERS Project
+Copyright (C) 2014-2019 by TOPPERS Project
 
  The above copyright holders grant permission gratis to use,
  duplicate, modify, or redistribute (hereafter called use) this
@@ -50,7 +50,7 @@ Copyright (C) 2014-2015 by TOPPERS Project
  TOPPERS PROJECT BE LIABLE FOR ANY TYPE OF DAMAGE DIRECTLY OR
  INDIRECTLY CAUSED FROM THE USE OF THIS SOFTWARE.
 
- $Id: tecscde.rb 2538 2016-01-24 03:18:56Z okuma-top $
+ $Id: tecscde.rb 2640 2017-06-03 11:27:12Z okuma-top $
 
 =end
 
@@ -71,6 +71,8 @@ require "#{$tecsgen_base_path}/cdelib/tcontrol"
 require "#{$tecsgen_base_path}/cdelib/saveload"
 require "#{$tecsgen_base_path}/cdelib/cell_plugin_dialog"
 require "#{$tecsgen_base_path}/cdelib/palette.rb"
+
+$tool_version = $tecscde_version
 
 def dbgPrint( message, *args )
   printf( message, *args )

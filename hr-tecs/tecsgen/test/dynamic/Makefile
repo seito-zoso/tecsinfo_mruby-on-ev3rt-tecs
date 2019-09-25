@@ -70,3 +70,17 @@ test_exec :
 	./dynamic-singleton-array-r.exe
 	@echo ===============
 	./dynamic-singleton-array-ram-initializer.exe
+
+.PHONY : tecsflow
+tecsflow :
+	make tecsflow -f Makefile-normal 
+	make tecsflow -f Makefile-singleton 
+	make tecsflow -f Makefile-array 
+	make tecsflow -f Makefile-singleton-array 
+
+.PHONY : tecsflow_u
+tecsflow_u :
+	make tecsflow_u -f Makefile-normal 
+	make tecsflow_u -f Makefile-singleton 
+	make tecsflow_u -f Makefile-array 
+	make tecsflow_u -f Makefile-singleton-array 

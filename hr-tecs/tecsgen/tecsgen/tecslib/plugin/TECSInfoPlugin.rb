@@ -2,8 +2,8 @@
 #
 #  TECS Generator
 #      Generator for TOPPERS Embedded Component System
-#  
-#   Copyright (C) 2017 by TOPPERS Project
+# 
+#   Copyright (C) 2017-2018 by TOPPERS Project
 #--
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
 #   ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: CelltypePlugin.rb 2061 2014-05-31 22:15:33Z okuma-top $
+#   $Id: TECSInfoPlugin.rb 3077 2019-06-09 07:23:31Z okuma-top $
 #++
 
 #== CelltypePlugin for tTECSInfo
@@ -49,6 +49,10 @@ class TECSInfoPlugin < CelltypePlugin
   #celltype::     Celltype        セルタイプ（インスタンス）
   def initialize( celltype, option )
     super
+    if $unopt_entry == false then
+      cdl_info( "TIF0001 forcely set --unoptimize-entry by TECSInfoPlugin (by importing TECSInfo.cdl)" )
+      $unopt_entry = true
+    end
   end
 
   #=== 新しいセル
@@ -60,7 +64,8 @@ class TECSInfoPlugin < CelltypePlugin
     @@cell_list << cell
 
     # AppFile は、重ね書きようなので、やめる
-    # p "import: cell nTECSInfo::tTECSInfoSub TECSInfoSub under #{cell.get_region.get_name}"
+    # p "import: cell nTECSInfo::tTECSInfoSub #{cell.get_namespace_path.to_s} under #{cell.get_region.get_name}"
+    # cell.show_tree 0
     # TECSInfoSub セルのプロトタイプ宣言
     fn = "#{$gen}/tmp_#{cell.get_region.get_global_name}_TECSInfoSub.cdl"
     File.open( fn, "w" ){ |f|
@@ -88,20 +93,6 @@ EOT
     end
   end
 
-  #=== 後ろの CDL コードを生成
-  #プラグインの後ろの CDL コードを生成
-  #file:: File: 
-  def self.gen_post_code( file )
-    # 複数のプラグインの post_code が一つのファイルに含まれるため、以下のような見出しをつけること
-    file.print <<EOT
-/*------------ #{self.name} post code ------------*/
-EOT
-    @@cell_list.each{|cell|
-      root = cell.get_region # .get_link_root
-      TECSInfo.print_info file, root
-    }
-  end
-
   #=== tCelltype_factory.h に挿入するコードを生成する
   # file 以外の他のファイルにファクトリコードを生成してもよい
   # セルタイププラグインが指定されたセルタイプのみ呼び出される
@@ -127,7 +118,7 @@ EOT
 
     undefs = [ :VALID_IDX, :GET_CELLCB, :CELLCB, :CELLIDX,
                :tVarDeclInfo_IDX, :ATTR_name, :ATTR_sizeIsExpr,
-               :ATTR_declType, :ATTR_offset ]
+               :ATTR_declType, :ATTR_offset, :FOREACH_CELL ]
 
     f.print <<EOT
 
@@ -135,7 +126,7 @@ EOT
 #define TOPPERS_CB_TYPE_ONLY
 
 /* In case a celltype has 'inline' entry,
- * some macros are temprally defined
+ * some macros are temporally defined
  * even if TOPPERS_CB_TYPE_ONLY is defined.
  * To avoid redefinition warning, undef these macros.
  */
@@ -163,12 +154,41 @@ EOT
     end
     f.close
 
+    undefs = [ :N_CP_cEntryInfo, :NCP_cEntryInfo, :N_CP_cCallInfo, :NCP_cCallInfo,
+               :N_CP_cAttrInfo, :NCP_cAttrInfo, :N_CP_cVarInfo, :NCP_cVarInfo,
+               :VALID_IDX, :GET_CELLCB, :CELLCB, :CELLIDX, :ATTR_name, :ATTR_b_singleton,
+               :ATTR_b_IDX_is_ID_act, :ATTR_sizeOfCB, :ATTR_sizeOfINIB, :ATTR_n_cellInLinUnit,
+               :ATTR_n_cellInSystem, :cEntryInfo_getName, :cEntryInfo_getNameLength,
+               :cEntryInfo_getSignatureInfo, :cEntryInfo_getArraySize, :cEntryInfo_isInline,
+               :cCallInfo_getName, :cCallInfo_getNameLength, :cCallInfo_getSignatureInfo,
+               :cCallInfo_getArraySize, :cCallInfo_getSpecifierInfo, :cCallInfo_getInternalInfo,
+               :cCallInfo_getLocationInfo, :cCallInfo_getOptimizeInfo, :cAttrInfo_getName,
+               :cAttrInfo_getOffset, :cAttrInfo_getTypeInfo, :cAttrInfo_getSizeIsExpr,
+               :cAttrInfo_getSizeIs, :cVarInfo_getName, :cVarInfo_getOffset, :cVarInfo_getTypeInfo,
+               :cVarInfo_getSizeIsExpr, :cVarInfo_getSizeIs, :cEntryInfo_refer_to_descriptor,
+               :cEntryInfo_ref_desc, :cCallInfo_refer_to_descriptor, :cCallInfo_ref_desc,
+               :cAttrInfo_refer_to_descriptor, :cAttrInfo_ref_desc, :cVarInfo_refer_to_descriptor,
+               :cVarInfo_ref_desc, :is_cEntryInfo_joined, :is_cCallInfo_joined,
+               :is_cAttrInfo_joined, :is_cVarInfo_joined, :eCelltypeInfo_getName,
+               :eCelltypeInfo_getNameLength, :eCelltypeInfo_getNAttr, :eCelltypeInfo_getAttrInfo,
+               :eCelltypeInfo_getNVar, :eCelltypeInfo_getVarInfo, :eCelltypeInfo_getNCall,
+               :eCelltypeInfo_getCallInfo, :eCelltypeInfo_getNEntry, :eCelltypeInfo_getEntryInfo,
+               :eCelltypeInfo_isSingleton, :eCelltypeInfo_isIDX_is_ID, :eCelltypeInfo_hasCB,
+               :eCelltypeInfo_hasINIB, :FOREACH_CELL, :END_FOREACH_CELL, :INITIALIZE_CB ]
+
     f = AppFile.open( "#{$gen}/nTECSInfo_tCelltypeInfo_factory.h" )
-    f.print "\n"
+    undefs.each{ |u|
+      f.print "#undef #{u}\n"
+    }
+    f.print "#define TOPPERS_CB_TYPE_ONLY\n"
     Namespace.get_root.print_celltype_define f
+    # FOREACH_CELL を出しなおす
+    ct = Namespace.find [ "::", :nTECSInfo, :tCelltypeInfo ]
+    ct.gen_ph_foreach_cell f
+    ct.gen_ph_cb_initialize_macro f
     f.print "\n"
     f.close
-    
+   
     undefs = [ :VALID_IDX, :GET_CELLCB, :CELLCB, :CELLIDX,
                :tCallInfo_IDX, :ATTR_name, :ATTR_offset, :ATTR_b_inCB,
                :ATTR_b_optional, :ATTR_b_omit, :ATTR_b_dynamic,
@@ -183,7 +203,7 @@ EOT
                :eCallInfo_getNameLength, :eCallInfo_getSignatureInfo,
                :eCallInfo_getArraySize, :eCallInfo_isOptional,
                :eCallInfo_isDynamic, :eCallInfo_isRefDesc,
-               :eCallInfo_isOmit ]
+               :eCallInfo_isOmit, :FOREACH_CELL ]
 
     f = AppFile.open( "#{$gen}/nTECSInfo_tCallInfo_factory.h" )
     f.print <<EOT
@@ -192,7 +212,7 @@ EOT
 #define TOPPERS_CB_TYPE_ONLY
 
 /* In case a celltype has 'inline' entry,
- * some macros are temprally defined
+ * some macros are temporally defined
  * even if TOPPERS_CB_TYPE_ONLY is defined.
  * To avoid redefinition warning, undef these macros.
  */
@@ -221,12 +241,36 @@ EOT
 EOT
     end
     f.close
+
+    f = AppFile.open( "#{$gen}/nTECSInfo_tEntryInfo_factory.h" )
+    Namespace.get_root.print_entry_define f
+    f.close
+
+    undefs = [ :GET_CELLCB, :CELLCB, :CELLIDX, :ATTR_name, :INITIALIZE_CB, :FOREACH_CELL ]
+    f = AppFile.open( "#{$gen}/nTECSInfo_tCellInfo_factory.h" )
+    undefs.each{ |u|
+      f.print "#undef #{u}\n"
+    }
+    Region.get_root.print_cell_define f
+    # FOREACH_CELL を出しなおす
+    ct = Namespace.find [ "::", :nTECSInfo, :tCellInfo ]
+    ct.gen_ph_foreach_cell f
+    ct.gen_ph_cb_initialize_macro f
+    f.close
+
+    f = AppFile.open( "#{$gen}/nTECSInfo_tRawEntryDescriptorInfo_factory.h" )
+    Region.get_root.print_entry_descriptor_define f
+    f.close
   end
 
   #=== 後ろの CDL コードを生成
   #プラグインの後ろの CDL コードを生成
   #file:: File:
   def self.gen_post_code( file )
+    if Generator.get_n_error > 0 then
+      Generator.info( "I9999 TECSInfoPlugin does not generate TECSInfo code because of early error" )
+      return
+    end
     # 複数のプラグインの post_code が一つのファイルに含まれるため、以下のような見出しをつけること
     file.print <<EOT
 /*------------ #{self.name} post code ------------*/
@@ -236,5 +280,9 @@ EOT
       TECSInfo.print_info file, root
     }
   end
-end
 
+  def self.get_post_code_priority
+    p "#{self.name} get_post_code_priority"
+    return PluginModule::SIGNATURE_PLUGIN_POST_CODE_PRIORITY + 1000
+  end
+end

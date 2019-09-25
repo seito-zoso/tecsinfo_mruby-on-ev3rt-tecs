@@ -77,3 +77,9 @@ cell tTypedefStruct TypedefStruct {
 		1,		/* a */
 	};
 };
+
+const int32_t tag = 0;
+typedef struct tag { int i; } SST;
+
+
+

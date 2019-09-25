@@ -30,7 +30,7 @@
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
  * 
- *  @(#) $Id: tMruby.cdl 283 2012-08-12 06:52:59Z ritsumei-takuya $
+ *  @(#) $Id: sMruby.cdl 2640 2017-06-03 11:27:12Z okuma-top $
  */
 
 namespace nMruby{

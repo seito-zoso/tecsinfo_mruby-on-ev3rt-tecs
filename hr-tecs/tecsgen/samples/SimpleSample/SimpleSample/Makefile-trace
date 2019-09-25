@@ -1,7 +1,7 @@
 TARGET_BASE = SimpleSample-trace
 BASE_DIR = .
 GEN_DIR = $(BASE_DIR)/gen
-INCLUDES = -I $(BASE_DIR)/. -I $(BASE_DIR)/../../cygwin -I $(TECSPATH) -I $(TECSPATH)/mruby -I $(TECSPATH)/posix -I $(TECSPATH)/rpc -I $(GEN_DIR)
+INCLUDES = -I $(BASE_DIR)/. -I $(BASE_DIR)/../../../test/cygwin -I $(TECSPATH) -I $(TECSPATH)/mruby -I $(TECSPATH)/posix -I $(TECSPATH)/rpc -I $(GEN_DIR)
 DEFINES =
 
 # end of fixed variable (unchangeable by config or plugin)
@@ -41,8 +41,8 @@ PRE_TECSGEN_TARGET =
 POST_TECSGEN_TARGET =
 
 # vpath for C sources and headers
-vpath %.c $(SRC_DIR) $(GEN_DIR)  ../../cygwin $(TECSPATH) $(TECSPATH)/mruby $(TECSPATH)/posix $(TECSPATH)/rpc
-vpath %.h $(SRC_DIR) $(GEN_DIR)  ../../cygwin $(TECSPATH) $(TECSPATH)/mruby $(TECSPATH)/posix $(TECSPATH)/rpc
+vpath %.c $(SRC_DIR) $(GEN_DIR)  ../../../test/cygwin $(TECSPATH) $(TECSPATH)/mruby $(TECSPATH)/posix $(TECSPATH)/rpc
+vpath %.h $(SRC_DIR) $(GEN_DIR)  ../../../test/cygwin $(TECSPATH) $(TECSPATH)/mruby $(TECSPATH)/posix $(TECSPATH)/rpc
 
 # Other objects (out of tecsgen)
 # OTHER_OBJS =                      # Add objects out of tecs care.
@@ -67,7 +67,7 @@ clean :
 tecs : $(PRE_TECSGEN_TARGET) $(TIMESTAMP) $(POST_TECSGEN_TARGET)
 
 $(TIMESTAMP) : $(TECS_IMPORTS)
-	$(TECSGEN_EXE)  -k euc -I ../../cygwin SimpleSample-trace.cdl
+	$(TECSGEN_EXE)  -k euc -I ../../../test/cygwin SimpleSample-trace.cdl
 	touch $(TIMESTAMP)
 
 # generic target for objs

@@ -65,6 +65,21 @@ tecsgen.timestamp : $(TECS_IMPORTS)
 	$(TECSGEN_EXE) -I ../RUNTIME/tecs-runtime/include/ -I ../RUNTIME/tecs-runtime/workaround/ -I ../RUNTIME/tecs-runtime/target/ -I src attribute.cdl
 	touch tecsgen.timestamp
 
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecsgen
+
+tcflow : tecsgen
+	make -f Makefile.NG tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
+
 # Celltype: tAttribute
 $(GEN_DIR)/tAttribute_tecsgen.o : $(GEN_DIR)/tAttribute_tecsgen.c
 	$(CC) -c $(CFLAGS) -o $@ $<

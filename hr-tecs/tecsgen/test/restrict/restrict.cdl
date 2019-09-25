@@ -67,6 +67,10 @@ func::Symbol: 受け口関数名
 import( <cygwin_kernel.cdl> );
 import( <tSysLog.cdl> );
 
+[domain(MyDomain,"nontrusted")]
+region rRegionSrc {
+};
+
 
 signature sSig {
     void func1( void );
@@ -99,7 +103,6 @@ region rRegionDst {
     cell tKernel Kernel{};
     cell tSysLog SysLog{};
 
-[domain(MyDomain,"nontrusted")]
 region rRegionSrc {
 
     cell tCelltypeClient Cell {

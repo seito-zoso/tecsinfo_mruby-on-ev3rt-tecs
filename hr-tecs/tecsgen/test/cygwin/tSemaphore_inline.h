@@ -46,7 +46,9 @@
 /*
  * #include "tSemaphore_tecsgen.h"
  */
+#ifndef TECSGEN
 #include <unistd.h>
+#endif /* TECSGEN */
 #include "errno.h"
 #include "tecs_pthread_adaptor.h"
 
@@ -154,7 +156,7 @@ Inline ER
 eSemaphore_initialize(CELLIDX idx)
 {
 	CELLCB	*p_cellcb = GET_CELLCB(idx);
-	return(ini_sem(ATTR_id));
+	return E_OK; // (ini_sem(ATTR_id));
 }
 
 /* #[<ENTRY_FUNC>]# eSemaphore_refer
@@ -166,7 +168,8 @@ Inline ER
 eSemaphore_refer(CELLIDX idx, T_RSEM* pk_semaphore_status)
 {
 	CELLCB	*p_cellcb = GET_CELLCB(idx);
-	return(ref_sem(ATTR_id, pk_semaphore_status));
+  memset( (void *)pk_semaphore_status, 0, sizeof(T_RSEM) );
+	return E_OK;  //(ref_sem(ATTR_id, pk_semaphore_status));
 }
 
 /* #[<ENTRY_PORT>]# eiSemaphore
@@ -185,5 +188,5 @@ Inline ER
 eiSemaphore_signal(CELLIDX idx)
 {
 	CELLCB	*p_cellcb = GET_CELLCB(idx);
-	return(isig_sem(ATTR_id));
+  return eSemaphore_signal(idx);
 }

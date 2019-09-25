@@ -43,7 +43,7 @@ class MyTracePlugin < ThroughPlugin
 
   #=== TracePlugin の initialize
   #  説明は ThroughPlugin (plugin.rb) を参照
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
 
     @maxArrayDisplay = 16
     @cellEntry_list  = []
@@ -140,6 +140,11 @@ EOT
     if @b_generate != false then
       nest = @region.gen_region_str_pre file
       indent_str =  "  " * nest
+      if @next_cell_port_subscript then
+        subscript = '[' + @next_cell_port_subscript.to_s + ']'
+      else
+        subscript = ""
+      end
 
       if @probeName then
         probeName_str = "#{indent_str}  probeName_str = \"" + @probeName + ": \";\n"
@@ -154,10 +159,10 @@ EOT
 
       file.print <<EOT
 #{indent_str}cell #{@ct_name} #{@cell_name} {
-#{indent_str}  #{@call_port_name} = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name};
+#{indent_str}  #{@call_port_name} = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name}#{subscript};
 #{probeName_str}#{caller_cell_str}#{indent_str}};
 EOT
-#  cell_port_name_str = \"#{@next_cell.get_name}.#{@next_cell_port_name}\";
+#  cell_port_name_str = \"#{@next_cell.get_name}.#{@next_cell_port_name}#{subscript}\";
       @region.gen_region_str_post file
     end
 

@@ -1,7 +1,7 @@
 ﻿TARGET = SimpleSample.exe
 TIMESTAMP = tecsgen.timestamp
 TECSGEN_EXE = tecsgen
-CYGPATH = ../../cygwin
+CYGPATH = ../../../test/cygwin
 BASE_DIR = .
 CC = gcc
 INCLUDE = -I $(BASE_DIR)/. -I $(TECSPATH) -I $(CYGPATH) -I $(TECSPATH)/rpc -I $(GEN_DIR)

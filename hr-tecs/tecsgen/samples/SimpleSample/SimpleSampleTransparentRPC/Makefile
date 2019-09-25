@@ -1,18 +1,8 @@
-# このファイルは tecsgen により自動生成されました
-# Makefile.temp は gen の一つ上のディレクトリに移して使用します
-#  % mv Makefile.temp Makefile
-# 
-# clean のデフォルト動作は $(GEN_DIR)/Makefile.* を削除します
-#
-# このファイルは GNU make で gcc を用い POSIX 環境で動作するモジュールをビルドするのに適切なように生成されています
-# vpath, CFLAGS, OTHER_OBJS などを調整する必要があるかもしれません
-# 他の環境やターゲットの場合、このファイルを元に変更する必要があります
-
 # 変数 #_MVAR_#
 # fixed variable (unchangeable by config or plugin)
 TARGET_BASE = SimpleSample
 BASE_DIR = .
-CYGPATH = ../../cygwin
+CYGPATH = ../../../test/cygwin
 GEN_DIR = $(BASE_DIR)/gen
 INCLUDES = -I $(BASE_DIR)/. -I $(BASE_DIR)/./. -I $(TECSPATH) -I $(CYGPATH) -I $(TECSPATH)/rpc -I $(BASE_DIR)/./gen -I $(TECSPATH)/mruby -I $(TECSPATH)/posix -I $(GEN_DIR)
 DEFINES =

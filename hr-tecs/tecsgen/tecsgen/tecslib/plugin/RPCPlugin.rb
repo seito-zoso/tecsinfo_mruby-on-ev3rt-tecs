@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: RPCPlugin.rb 2061 2014-05-31 22:15:33Z okuma-top $
+#   $Id: RPCPlugin.rb 2952 2018-05-07 10:19:07Z okuma-top $
 #++
 
 require_tecsgen_lib "lib/GenTransparentMarshaler.rb"
@@ -64,7 +64,7 @@ class RPCPlugin < ThroughPlugin
 
   #=== RPCPlugin の initialize
   #  説明は ThroughPlugin (plugin.rb) を参照
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
     super
     @b_noClientSemaphore = false
     @semaphoreCelltype = "tSemaphore"
@@ -196,6 +196,11 @@ EOT
 
     nest = @region.gen_region_str_pre file
     indent_str = "  " * nest
+    if @next_cell_port_subscript then
+      subscript = '[' + @next_cell_port_subscript.to_s + ']'
+    else
+      subscript = ""
+    end
 
     file.print <<EOT
 #{indent_str}// 一方向チャンネルセル
@@ -232,7 +237,7 @@ EOT
 
     file.print <<EOT
 #{indent_str}cell #{@rpc_channel_celltype_name} #{@cell_name} {
-#{indent_str}  #{@call_port_name} = #{@next_cell.get_name}.#{@next_cell_port_name};
+#{indent_str}  #{@call_port_name} = #{@next_cell.get_name}.#{@next_cell_port_name}#{subscript};
 #{indent_str}  cTDR         = #{@channelCellName}.eTDR;
 #{indent_str}  cEventflag   = #{@channelCellName}.eEventflag;
 #{indent_str}  taskPriority = #{@task_priority};

@@ -3,7 +3,7 @@
 #  TECS Generator
 #      Generator for TOPPERS Embedded Component System
 #  
-#   Copyright (C) 2008-2016 by TOPPERS Project
+#   Copyright (C) 2008-2017 by TOPPERS Project
 #--
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
 #   ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -103,7 +103,11 @@ class Node
   end
 
   def locale_str
-    "locale=( #{@locale[0]}, #{@locale[1]} )"
+    if @locale then
+      "locale=(#{@locale[0]}, #{@locale[1]})"
+    else
+      "locale=(?)"
+    end
   end
 end
 
@@ -681,6 +685,13 @@ class Decl < BDNode
       else
         return false
       end
+    end
+  end
+
+  #=== Decl# print_flowinfo
+  def print_flowinfo file
+    if @kind == :VAR then
+      file.write "#{@identifier} "
     end
   end
 

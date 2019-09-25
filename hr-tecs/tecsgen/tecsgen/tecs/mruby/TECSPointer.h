@@ -38,6 +38,8 @@
 #ifndef TECSPointer_h__
 #define TECSPointer_h__
 
+#ifndef TECSGEN
+
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
@@ -101,8 +103,8 @@ POINTER_BODY( SChar,  char_t )		/* struct SCharPointerBody */
 	VALCHECK_MRB_ ## Type( mrb_state *mrb, type val )					\
 	{																	\
 		if( sizeof( type ) > sizeof( mrb_int ) ){						\
-			if( val >= (((type)1) << (sizeof(mrb_int)*8-1))				\
-				|| val < -(((type)1) << (sizeof(mrb_int)*8-1)) )		\
+			if( val > TYPE ## _MAX				\
+				|| val < TYPE ## _MIN )		\
 				/* '=' unecessary for negative value	*/				\
 				/* ignore warning on int32_t */							\
 				mrb_raise(mrb, E_ARGUMENT_ERROR, "too large or too small for mrb_int"); \
@@ -125,7 +127,7 @@ POINTER_BODY( SChar,  char_t )		/* struct SCharPointerBody */
 	VALCHECK_MRB_ ## Type( mrb_state *mrb, type val )					\
 	{																	\
 		if( sizeof( type ) > sizeof( mrb_int ) ){						\
-			if( val >= (((type)1) << (sizeof(mrb_int)*8)))				\
+      if( val > TYPE ## _MAX )                        \
 				/* '=' unecessary for negative value	*/				\
 				/* ignore warning on int32_t */							\
 				mrb_raise(mrb, E_ARGUMENT_ERROR, "too large or too small for mrb_int"); \
@@ -580,6 +582,17 @@ CharPointer_from_s( mrb_state *mrb, mrb_value self )
 
 /* Initialize TECSPointer classes */
 void	init_TECSPointer( mrb_state *mrb, struct RClass *TECS );
+
+#else /*TECSGEN */
+
+#define GET_SET_BOOL( Type, type )
+#define GET_SET_CHAR( Type, type )
+#define GET_SET_INT( Type, type )
+#define GET_SET_FLOAT( Type, type )
+#define POINTER_CLASS( Type, type )
+#define CHECK_AND_GET_POINTER( Type, type )
+
+#endif /*TECSGEN */
 
 #endif /* TECSPointer_h__ */
 

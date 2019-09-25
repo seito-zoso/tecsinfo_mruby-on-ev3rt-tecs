@@ -19,7 +19,8 @@
 
 #include <unistd.h>
 #include <stdio.h>
-#include <pthread.h>
+// #include <pthread.h>
+#include "tecs_pthread_adaptor.h"
 #include <signal.h>
 #include <errno.h>
 #include "tTask_tecsgen.h"

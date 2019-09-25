@@ -4,7 +4,7 @@ TIMESTAMP = gen/tecsgen.timestamp
 TECSGEN_EXE = tecsgen
 BASE_DIR = .
 CC = gcc
-CFLAGS = -I $(BASE_DIR)/. -I $(BASE_DIR)/../cygwin -I $(TECSPATH) -I $(TECSPATH)/mruby -I $(TECSPATH)/rpc -I $(TECSPATH)/TECSInfo -I $(BASE_DIR)/rpc -I $(GEN_DIR) -D "Inline=static inline"
+CFLAGS = -I $(BASE_DIR)/. -I $(BASE_DIR)/../cygwin -I $(TECSPATH) -I $(TECSPATH)/mruby -I $(TECSPATH)/rpc -I $(TECSPATH)/TECSInfo -I $(BASE_DIR)/rpc -I $(GEN_DIR) -D "Inline=static inline" -D "__inline=inline"  -D _Noreturn= 
 LD = gcc
 LDFLAGS = -lpthread
 GEN_DIR = $(BASE_DIR)/gen
@@ -39,6 +39,24 @@ tecs : $(TIMESTAMP)
 
 $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN_EXE) -I ../../tecs -I ../../tecs/rpc -I ../cygwin rpc_test.cdl
+
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+tecsflow_u : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR) -U
+
+$(GEN_DIR)/tecsgen.rbdmp : tecs
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_CELLTYPE_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
 
 # generic target for objs
 $(_TECS_OBJ_DIR)%.o : %.c

@@ -2,11 +2,12 @@ class Plugin1 < ThroughPlugin
 
   @@generated_celltype = {}
 
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
     super
     @cell_name = cell_name
     @next_cell = next_cell
     @next_cell_port_name = next_cell_port_name
+    @next_cell_port_subscript = next_cell_port_subscript
     @signature = signature
     @entry_port_name = :"throughEntry"
     # print( "Plugin1.new( '#{cell_name}', '#{plugin_arg}', '#{next_cell.get_name}', '#{next_cell_port_name}', #{celltype.get_name} )\n" )
@@ -42,10 +43,15 @@ class Plugin1 < ThroughPlugin
   def gen_through_cell_code( file )
 
     gen_plugin_decl_code( file )
+    if @next_cell_port_subscript then
+      subscript = '[' + @next_cell_port_subscript.to_s + ']'
+    else
+      subscript = ""
+    end
 
     file.print <<EOT
 cell tPlugin1_#{@signature.get_name} #{@cell_name} {
-  cCall = #{@next_cell.get_name}.#{@next_cell_port_name};
+  cCall = #{@next_cell.get_name}.#{@next_cell_port_name}#{subscript};
 };
 EOT
 

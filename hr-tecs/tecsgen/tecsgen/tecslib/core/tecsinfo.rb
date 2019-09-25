@@ -3,7 +3,7 @@
 #  TECS Generator
 #      Generator for TOPPERS Embedded Component System
 #  
-#   Copyright (C) 2017 by TOPPERS Project
+#   Copyright (C) 2017-2018 by TOPPERS Project
 #--
 #   上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
 #   ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: CelltypePlugin.rb 2061 2014-05-31 22:15:33Z okuma-top $
+#   $Id: tecsinfo.rb 2850 2018-04-01 12:38:45Z okuma-top $
 #++
 
 # TECS 情報セルの生成
@@ -48,7 +48,9 @@ module TECSInfo
     f.print <<EOT
 #{indent0}region rTECSInfo {
 EOT
-    # mikan 全部生成するのではなく、region 下のセルのセルタイプと、そこから参照されるシグニチャ、セルタイプに限定して出力する．
+    Type.reset_print_info
+
+    # mikan 全部生成するのではなく、region 下のセルのセルタイプと、そこから参照されるシグニチャ、セルタイプに限定して出力すべき
     # しかし、意味解析後に出力するため、これは容易ではない．最適化とコード生成は、リンクルートごとに行われる．
     Namespace.print_info f, indent
     region.get_link_root.print_info f, indent
@@ -148,6 +150,9 @@ EOT
         f.printf "#define OFFSET_OF_%-30s  (%s)\n",
                  "#{tag.get_ID_str}_#{decl.get_name}",
                  "(uint32_t)(intptr_t)&(((#{tag.get_type_str}#{tag.get_type_str_post}*)0)->#{decl.get_name})"
+        f.printf "#define PLACE_OF_%-30s  (%s)\n",
+                 "#{tag.get_ID_str}_#{decl.get_name}",
+                 "VARDECL_PLACE_STRUCT"
       }
     }
   end
@@ -190,6 +195,19 @@ EOT
       end
     }
   end
+
+  def print_entry_define f
+    @celltype_list.each { |ct|
+      if ct.get_cell_list.length > 0 then
+        ct.print_entry_define f
+      end
+    }
+    @namespace_list.each { |ns|
+      if ns.instance_of? Namespace then   # region を含めない
+        ns.print_entry_define f
+      end
+    }
+  end
 end
 
 class Region
@@ -199,12 +217,30 @@ class Region
     else
       name = @global_name
     end
+    # p "region:#{get_name}"
     f.print "\n#{indent}/*** #{get_namespace_path} region information cell ***/\n"
     f.print <<EOT
 #{indent}cell nTECSInfo::tRegionInfo #{name}RegionInfo{
 #{indent}    name = "#{@name}";
-#{indent}};
 EOT
+    @cell_list.each{ |cell|
+        # print "cell class="+cell.get_celltype.class.name+", " + cell.get_celltype.get_name.to_s + " 1\n"
+      if ! cell.exclude_info? then
+        # print "cell class="+cell.get_celltype.class.name+", " + cell.get_celltype.get_name.to_s + " 2\n"
+        f.print "#{indent}    cCellInfo[] = #{cell.get_global_name}CellInfo.eCellInfo;\n"
+      end
+    }
+    @namespace_list.each { |region|
+      if region.instance_of? Region then
+        f.print "#{indent}    cRegionInfo[] = #{region.get_global_name}RegionInfo.eRegionInfo;\n"
+       end
+    }
+    f.print "#{indent}};\n"
+    @cell_list.each{ |cell|
+      if ! cell.exclude_info? then
+        cell.print_info f, indent
+      end
+    }
   end
 
   def print_info_region( f, indent )
@@ -220,19 +256,116 @@ EOT
     #p "print_info: #{self.get_global_name}"
     self.print_info_region f, indent
   end
+
+  def self.print_cell_define f
+    region.get_link_root.print_cell_define f
+    region.get_link_root.get_region{ |region|
+      if region.instance_of? Region then
+        region.print_cell_define_offset f
+      end
+
+    }
+  end
+
+  def print_cell_define f
+    ct_list = {}
+    @cell_list.each{ |cell|
+      next if cell.exclude_info_factory?
+      ct_list[ cell.get_celltype ] = true
+    }
+    f.print "#define TOPPERS_CB_TYPE_ONLY\n"
+    ct_list.each{ |ct, val|
+      f.print "#include \"#{ct.get_global_name}_tecsgen.h\"\n"
+    }
+    f.print "\n"
+    @cell_list.each{ |cell|
+      next if cell.exclude_info_factory?
+      name_array = cell.get_celltype.get_name_array cell
+      if cell.get_celltype.has_CB?
+        cb = "(void*)#{name_array[8]}"
+        cb_proto = "extern #{cell.get_celltype.get_global_name}_CB #{name_array[4]};\n"
+      else
+        cb = "0"
+        cb_proto = ""
+      end
+      if cell.get_celltype.has_INIB?
+        inib = "(void*)&#{name_array[5]}"
+        inib_proto = "extern #{cell.get_celltype.get_global_name}_INIB #{name_array[11]};\n"
+      else
+        inib = "0"
+        inib_proto = ""
+      end
+      if ! cell.exclude_info_factory? then
+        f.print <<EOT
+#{cb_proto}#define  #{cell.get_global_name}__CBP   #{cb}
+#{inib_proto}#define  #{cell.get_global_name}__INIBP #{inib}
+EOT
+      end
+    }
+    @namespace_list.each { |region|
+      if region.instance_of? Region then
+        region.print_cell_define f
+      end
+    }
+  end
+
+  def print_entry_descriptor_define f
+    @cell_list.each{ |cell|
+      next if cell.exclude_info_factory?
+
+      signatures = {}
+      cell.get_celltype.get_port_list.each{ |port|
+        next if port.get_port_type != :ENTRY
+
+        if signatures[ port.get_signature ] == nil then
+          f.print "#include \"#{port.get_signature.get_global_name}_tecsgen.h\"\n"
+        end
+        if cell.get_celltype.get_global_name == :nTECSInfo_tRawEntryDescriptorInfo then
+          f.print "const struct tag_#{cell.get_celltype.get_global_name}_#{port.get_name}_DES "
+          f.print "#{cell.get_global_name}_#{port.get_name}_des;\n"
+        else
+          size = port.get_array_size
+          if size == nil then
+            size = 1
+          elsif size == "[]" then
+            size = cell.get_entry_port_max_subscript( port )
+          end
+          if ! port.is_omit? then
+            if( size == 1 ) then
+              f.print "extern struct tag_#{port.get_signature.get_global_name}_VDES "
+              f.print "#{cell.get_global_name}_#{port.get_name}_des;\n"
+            else
+              red = ""
+              delim = ""
+              (0..size-1).each{ |i|
+                f.print "extern struct tag_#{port.get_signature.get_global_name}_VDES "
+                f.print "#{cell.get_global_name}_#{port.get_name}_des#{i};\n"
+                delim = ", "
+              }
+            end
+          end
+        end
+      }
+    }
+    @namespace_list.each { |region|
+      if region.instance_of? Region then
+        region.print_entry_descriptor_define f
+      end
+    }
+  end
 end
 
 class Celltype
   def print_info f, indent
     f.print <<EOT
 #{indent}cell nTECSInfo::tCelltypeInfo #{@global_name}CelltypeInfo {
-#{indent}    name            = "#{@name}";
-#{indent}    b_singleton     = #{@singleton};
-#{indent}    b_IDX_is_ID_act = C_EXP( "#{@global_name}__IDX_is_ID_act" );
-#{indent}    b_hasCB         = C_EXP( "#{@global_name}__hasCB" );
-#{indent}    b_hasINIB       = C_EXP( "#{@global_name}__hasINIB" );
-#{indent}    n_cellInLinUnit = C_EXP( "#{@global_name}__NCELLINLINKUNIT" );
-#{indent}    n_cellInSystem  = #{@cell_list.length};
+#{indent}    name             = "#{@name}";
+#{indent}    b_singleton      = #{@singleton};
+#{indent}    b_IDX_is_ID_act  = C_EXP( "#{@global_name}__IDX_is_ID_act" );
+#{indent}    sizeOfCB         = C_EXP( "#{@global_name}__sizeOfCB" );
+#{indent}    sizeOfINIB       = C_EXP( "#{@global_name}__sizeOfINIB" );
+#{indent}    n_cellInLinkUnit = C_EXP( "#{@global_name}__NCELLINLINKUNIT" );
+#{indent}    n_cellInSystem   = #{@cell_list.length};
 EOT
     @port.each{ |port|
       if port.get_port_type == :ENTRY then
@@ -272,10 +405,10 @@ EOT
       end
     }
     @attribute.each{ |decl|
-      decl.print_info f, @global_name, indent
+      decl.print_info f, @global_name, indent, :DECLTYPE_ATTR
     }
     @var.each{ |decl|
-      decl.print_info f, @global_name, indent
+      decl.print_info f, @global_name, indent, :DECLTYPE_VAR
     }
   end
 
@@ -294,18 +427,23 @@ EOT
         end
         if ! decl.is_omit? then
           offset = "(uint32_t)(intptr_t)&(((#{@global_name}_#{inib_cb}*)0)->#{decl.get_name})"
+          place = inib_cb
         else
           offset = "0xffffffff"
+          place = "NON"
         end
         f.printf "#define OFFSET_OF_%-30s  (%s)\n", "#{@global_name}_#{decl.get_name}", offset
+        f.printf "#define PLACE_OF_%-30s  VARDECL_PLACE_%s\n", "#{@global_name}_#{decl.get_name}", place
       }
       @var.each{ |decl|
-        if decl.get_size_is then
+        if decl.get_size_is && has_INIB? then
           inib_cb = "INIB"
         else
           inib_cb = "CB"
         end
-          f.printf "#define OFFSET_OF_%-30s  (%s)\n", "#{@global_name}_#{decl.get_name}", "(uint32_t)(intptr_t)&(((#{@global_name}_#{inib_cb}*)0)->#{decl.get_name})"
+        place = inib_cb
+        f.printf "#define OFFSET_OF_%-30s  (%s)\n", "#{@global_name}_#{decl.get_name}", "(uint32_t)(intptr_t)&(((#{@global_name}_#{inib_cb}*)0)->#{decl.get_name})"
+        f.printf "#define PLACE_OF_%-30s  VARDECL_PLACE_%s\n", "#{@global_name}_#{decl.get_name}", place
       }
     else
       f.print <<EOT
@@ -315,18 +453,39 @@ EOT
       # 生成されないセルタイプ
       @attribute.each{ |decl|
         f.printf "#define OFFSET_OF_%-30s  (%s)\n", "#{@global_name}_#{decl.get_name}", "0xffffffff"
+        f.printf "#define PLACE_OF_%-30s   VARDECL_PLACE_NON\n", "#{@global_name}_#{decl.get_name}"
       }
       @var.each{ |decl|
         f.printf "#define OFFSET_OF_%-30s  (%s)\n", "#{@global_name}_#{decl.get_name}", "0xffffffff"
+        f.printf "#define PLACE_OF_%-30s   VARDECL_PLACE_NON\n", "#{@global_name}_#{decl.get_name}"
       }
     end
   end
 
   def print_celltype_define f
-    f.printf "#define %-50s (#{@idx_is_id_act})\n",     "#{@global_name}__IDX_is_ID_act"
-    f.printf "#define %-50s (#{has_CB?})\n",            "#{@global_name}__hasCB"
-    f.printf "#define %-50s (#{has_INIB?})\n",          "#{@global_name}__hasINIB"
-    f.printf "#define %-30s (%d)\n", "#{@global_name}__NCELLINLINKUNIT", @n_cell_gen
+    if has_INIB? then
+      size_INIB = "(sizeof(#{@global_name}_INIB))"
+    else
+      size_INIB = "(0)"
+    end
+    if has_CB? then
+      size_CB = "(sizeof(#{@global_name}_CB))"
+    else
+      size_CB   = "(0)"
+    end
+
+    if @n_cell_gen > 0 then
+      f.printf "\n#include \"#{@global_name}_tecsgen.h\"\n"
+      f.printf "#define %-50s (#{@idx_is_id_act})\n",     "#{@global_name}__IDX_is_ID_act"
+      f.printf "#define %-50s (#{size_CB})\n",            "#{@global_name}__sizeOfCB"
+      f.printf "#define %-50s (#{size_INIB})\n",          "#{@global_name}__sizeOfINIB"
+      f.printf "#define %-30s (%d)\n", "#{@global_name}__NCELLINLINKUNIT", @n_cell_gen
+    else
+      f.printf "#define %-50s (false)\n",                 "#{@global_name}__IDX_is_ID_act"
+      f.printf "#define %-50s (0)\n",                     "#{@global_name}__sizeOfCB"
+      f.printf "#define %-50s (0)\n",                     "#{@global_name}__sizeOfINIB"
+      f.printf "#define %-30s (%d)\n", "#{@global_name}__NCELLINLINKUNIT", @n_cell_gen
+    end
   end
 
   def print_call_define f
@@ -364,7 +523,7 @@ EOT
           place = "CALL_PLACE_INIB_DES"
         end
       end
-      if ( port.is_VMT_useless? && port.is_cell_unique? ) || @n_cell_gen == 0 then
+      if ( port.is_VMT_useless? && port.is_cell_unique? ) || port.is_omit? || @n_cell_gen == 0 then
         offset = "0xffffffff"
       else
         if port.is_dynamic? || ! has_INIB? then
@@ -374,11 +533,33 @@ EOT
         end
         offset = "(uint32_t)(intptr_t)&((#{@global_name}_#{cb_inib}*)0)->#{port.get_name}"
       end
+      array_size = port.get_array_size
+      if array_size == "[]" then
+        array_size = "0xffffffff"
+      elsif array_size == nil then
+        array_size = "0"
+      end
+
       f.printf "#define %-50s (#{offset})\n",                   "#{@global_name}_#{port.get_name}__offset"
+      f.printf "#define %-50s (#{array_size})\n",               "#{@global_name}_#{port.get_name}__array_size"
       f.printf "#define %-50s (#{place})\n",                    "#{@global_name}_#{port.get_name}__place"
       f.printf "#define %-50s (#{port.is_VMT_useless?})\n",     "#{@global_name}_#{port.get_name}__b_VMT_useless"
       f.printf "#define %-50s (#{port.is_skelton_useless?})\n", "#{@global_name}_#{port.get_name}__b_skelton_useless"
       f.printf "#define %-50s (#{port.is_cell_unique?})\n",     "#{@global_name}_#{port.get_name}__b_cell_unique"
+    }
+  end
+
+  def print_entry_define f
+    @port.each{ |port|
+      next if port.get_port_type == :CALL
+      array_size = port.get_array_size
+      if array_size == "[]" then
+        array_size = "0xffffffff"
+      elsif array_size == nil then
+        array_size = "0"
+      end
+
+      f.printf "#define %-50s (#{array_size})\n",               "#{@global_name}_#{port.get_name}__array_size"
     }
   end
 end
@@ -392,6 +573,7 @@ class Port
 #{indent}    name            = "#{@name}";
 #{indent}    cSignatureInfo  = #{@signature.get_global_name}SignatureInfo.eSignatureInfo;
 #{indent}    b_inline        = #{@b_inline};
+#{indent}    array_size      = C_EXP( "#{ct_global}_#{@name}__array_size" );
 #{indent}};
 EOT
     else
@@ -400,6 +582,7 @@ EOT
 #{indent}    name            = "#{@name}";
 #{indent}    cSignatureInfo  = #{@signature.get_global_name}SignatureInfo.eSignatureInfo;
 #{indent}    offset            = C_EXP( "#{ct_global}_#{@name}__offset" );
+#{indent}    array_size        = C_EXP( "#{ct_global}_#{@name}__array_size" );
 #{indent}    b_optional        = #{@b_optional};
 #{indent}    b_omit            = #{@b_omit};
 #{indent}    b_dynamic         = #{@b_dynamic};
@@ -413,6 +596,92 @@ EOT
 
 #{indent}};
 EOT
+    end
+  end
+end
+
+class Cell
+  def print_info f, indent
+    if exclude_info? then
+      return
+    end
+    f.print <<EOT
+
+#{indent}/*** #{@global_name} cell information ****/
+#{indent}cell nTECSInfo::tCellInfo #{@global_name}CellInfo {
+#{indent}    name            = "#{@name}";
+#{indent}    cbp             = C_EXP( \"#{@global_name}__CBP\" );
+#{indent}    inibp           = C_EXP( \"#{@global_name}__INIBP\" );
+#{indent}    cCelltypeInfo   = #{@celltype.get_global_name}CelltypeInfo.eCelltypeInfo;
+EOT
+    @celltype.get_port_list.each{ |port|
+      next if port.get_port_type != :ENTRY
+
+      f.print <<EOT
+#{indent}    cRawEntryDescriptor[] = #{@global_name}_#{port.get_name}RawEntryDescriptorInfo.eRawEntryDescriptor;
+EOT
+    }
+    f.print "#{indent}};\n"
+
+    # RawEntryDescriptorInfo cells
+    @celltype.get_port_list.each{ |port|
+      next if port.get_port_type != :ENTRY
+
+      size = port.get_array_size
+      if size == nil then
+        size = 1
+      elsif size == "[]" then
+        size = @entry_array_max_subscript[ port ]
+      end
+      if ! port.is_omit? then
+        if( size == 1 ) then
+          red = "C_EXP( \"&#{@global_name}_#{port.get_name}_des\" )"
+        else
+          red = ""
+          delim = ""
+          (0..size-1).each{ |i|
+            red += "#{delim}C_EXP( \"&#{@global_name}_#{port.get_name}_des#{i}\" )"
+            delim = ", "
+          }
+        end
+      else
+        red = "(void *)0"
+      end
+      f.print <<EOT
+#{indent}cell nTECSInfo::tRawEntryDescriptorInfo #{@global_name}_#{port.get_name}RawEntryDescriptorInfo {
+#{indent}   size = #{size};
+#{indent}   rawEntryDescriptor = { #{red} };
+EOT
+      f.print "#{indent}};\n"
+    }
+  end
+
+  def exclude_info?
+    # print "exclude_info?: name=" + get_name.to_s
+    if @celltype == nil ||
+       is_of_composite? ||
+       @celltype.get_global_name == :nTECSInfo_tTECSInfoSub ||
+       post_code_generated? ||
+       @b_defined == false then
+      # print ": true celltype_is_of_composite=#{is_of_composite?} celltype_name=#{@celltype.get_global_name} celltype.need_generate=#{@celltype.need_generate?}\n"
+      return true
+    else
+      # print ": false\n"
+      return false
+    end
+  end
+
+  def exclude_info_factory?
+    # print "exclude_info_factory?: name=" + get_name.to_s
+    if @celltype == nil ||
+       is_of_composite? ||
+       @celltype.get_global_name == :nTECSInfo_tTECSInfoSub ||
+       ! @celltype.need_generate? then
+      # print ": true celltype_is_of_composite=#{is_of_composite?} celltype_name=#{@celltype.get_global_name} celltype.need_generate=#{@celltype.need_generate?}\n"
+      return true
+    else
+      # print ": false\n"
+      return false
     end
   end
 end
@@ -445,7 +714,7 @@ class FuncHead
     func_name = get_name
     f.print <<EOT
 #{indent}cell nTECSInfo::tFunctionInfo #{sig_name}_#{func_name}FunctionInfo {
-#{indent}    name            = "#{@owner.get_global_name}_#{@name}";
+#{indent}    name            = "#{get_name}";
 #{indent}    bOneway         = #{is_oneway?};
 EOT
     get_paramlist.get_items.each{ |param|
@@ -501,7 +770,7 @@ EOT
 end
 
 class Decl
-  def print_info f, parent_ID_str, indent
+  def print_info f, parent_ID_str, indent, decl_type
     if @size_is then
       size = "\"mikan\"";
     else
@@ -511,8 +780,9 @@ class Decl
 #{indent}cell nTECSInfo::tVarDeclInfo #{parent_ID_str}_#{get_name}VarDeclInfo {
 #{indent}    name            = "#{get_name}";
 #{indent}    sizeIsExpr      = #{size};
-#{indent}    declType        = DECLTYPE_STMEMBER;
+#{indent}    declType        = #{decl_type};
 #{indent}    offset          = C_EXP( "OFFSET_OF_#{parent_ID_str}_#{get_name}" );
+#{indent}    place           = C_EXP( "PLACE_OF_#{parent_ID_str}_#{get_name}" );
 #{indent}    cTypeInfo       = #{get_type.get_ID_str}TypeInfo.eTypeInfo;
 #{indent}};
 EOT
@@ -522,6 +792,11 @@ end
 
 class Type
   @@typeinfo_printed = {}
+
+  def self.reset_print_info
+    @@typeinfo_printed = {}
+  end
+
   def print_info f, indent
     # Type の info は、最後にまとめて出力するので、ここでは記録するだけ
     if @@typeinfo_printed[ get_ID_str ] then
@@ -537,7 +812,7 @@ class Type
       get_type.print_info f, indent
     elsif self.kind_of? StructType then
       get_members_decl.get_items.each{ |decl|
-        decl.get_type.print_info f, indent
+        decl.print_info f, get_ID_str, indent, :DECLTYPE_STMEMBER
       }
     end
   end
@@ -549,10 +824,6 @@ class Type
   end
 
   def print_info_post f, indent
-    bit_size = get_bit_size
-    if bit_size == 0 then
-      bit_size = "C_EXP( \"sizeof(#{get_type_str}#{get_type_str_post})\" )"
-    end
     if self.class.superclass == Type then     # 親クラスが Type の場合 types.rb のクラス
       type_name = self.class.name
     else
@@ -565,19 +836,19 @@ class Type
 #{indent}cell nTECSInfo::t#{type_name}Info #{get_ID_str}TypeInfo{
 #{indent}    name           = "#{get_type_str}#{get_type_str_post}";
 #{indent}    typeKind       = TECSTypeKind_#{type_name};
-#{indent}    bitSize        = #{bit_size};
+#{indent}    size           = C_EXP( "sizeof(#{get_type_str}#{get_type_str_post})" );
 #{indent}    b_const        = #{is_const?};
 #{indent}    b_volatile     = #{is_volatile?};
 EOT
     if self.kind_of? PtrType then
-      f.print "#{indent}    cTypeInfo      = #{get_referto.get_ID_str}TypeInfo.eTypeInfo;\n"
+      f.print "#{indent}    cTypeInfo        = #{get_referto.get_ID_str}TypeInfo.eTypeInfo;\n"
     elsif self.kind_of? ArrayType then
-      f.print "#{indent}    cTypeInfo      = #{get_type.get_ID_str}TypeInfo.eTypeInfo;\n"
+      f.print "#{indent}    cTypeInfo        = #{get_type.get_ID_str}TypeInfo.eTypeInfo;\n"
     elsif self.kind_of? DefinedType then
-      f.print "#{indent}    cTypeInfo      = #{get_type.get_ID_str}TypeInfo.eTypeInfo;\n"
+      f.print "#{indent}    cTypeInfo        = #{get_type.get_ID_str}TypeInfo.eTypeInfo;\n"
     elsif self.kind_of? StructType then
       get_members_decl.get_items.each{ |decl|
-        f.print "#{indent}    cTypeInfo[]    = #{decl.get_type.get_ID_str}TypeInfo.eTypeInfo;\n"
+        f.print "#{indent}    cVarDeclInfo[] = #{get_ID_str}_#{decl.get_name}VarDeclInfo.eVarDeclInfo;\n"
       }
     elsif self.kind_of? DescriptorType then
       f.print "#{indent}    cSignatureInfo   = #{get_signature.get_global_name}SignatureInfo.eSignatureInfo;\n"

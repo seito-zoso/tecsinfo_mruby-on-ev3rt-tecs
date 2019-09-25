@@ -2,7 +2,7 @@ class Plugin1 < ThroughPlugin
 
   @@generated_celltype = {}
 
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
     super
     @cell_name = cell_name
     @next_cell = next_cell
@@ -45,10 +45,15 @@ class Plugin1 < ThroughPlugin
 
     nest = @region.gen_region_str_pre file
     nest_str = "  " * nest
+    if @next_cell_port_subscript then
+      subscript = '[' + @next_cell_port_subscript.to_s + ']'
+    else
+      subscript = ""
+    end
 
     file.print <<EOT
 #{nest_str}cell tPlugin1_#{@signature.get_name} #{@cell_name} {
-#{nest_str}  cCall = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name};
+#{nest_str}  cCall = #{@next_cell.get_namespace_path.get_path_str}.#{@next_cell_port_name}#{subscript};
 #{nest_str}};
 EOT
 

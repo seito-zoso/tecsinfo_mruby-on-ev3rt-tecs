@@ -13,7 +13,7 @@
  * name:         eEntry_func1
  * global_name:  tCell_serv_eEntry_func1
  */
-tecs_int32 eEntry_func1( tCell_serv_IDX idx, tecs_int32 a)
+int32_t eEntry_func1( tCell_serv_IDX idx, int32_t a)
 {
   CELLCB      *p_cellcb;
   if( VALID_IDX( idx ) ){
@@ -28,7 +28,7 @@ tecs_int32 eEntry_func1( tCell_serv_IDX idx, tecs_int32 a)
  * name:         eEntry_func2
  * global_name:  tCell_serv_eEntry_func2
  */
-tecs_int32 eEntry_func2( tCell_serv_IDX idx, tecs_int32 a)
+int32_t eEntry_func2( tCell_serv_IDX idx, int32_t a)
 {
   CELLCB      *p_cellcb;
   if( VALID_IDX( idx ) ){

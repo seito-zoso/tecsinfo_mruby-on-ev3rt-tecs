@@ -78,7 +78,9 @@ celltype tSample {
 	call  sSimple cSimple;
 };
 
-[singleton,active]
+[active]
+//[singleton,active]
+//[singleton]
 celltype tSimple {
 	entry sTaskBody eBody;
 	call  sSample  cCall;
@@ -110,3 +112,36 @@ region rTransparent {
 		taskAttribute = C_EXP( "TA_ACT" );
 	};
 }; /* region rTransparent */
+
+/******************************
+[out_through()]
+region rTransparent2 {
+  cell tAlloc Allocator {
+  };
+};
+
+region rTransparent2 {
+
+	cell tSimple Simple; // プロトタイプ宣言
+
+	[allocator(eEnt.giftToYou.buf=Allocator.eAlloc,
+			   eEnt.returnGiftFromYou.buf=Allocator.eAlloc,
+			   eEnt.onewayFunc.buf=Allocator.eAlloc)]
+	cell tSample Sample {
+		[through(RPCPlugin,"PPAllocatorSize=1024"),through(TracePlugin,"")]
+			cSimple = Simple.eSimple;
+	};
+
+	cell tSimple Simple {
+		[through(RPCPlugin,"PPAllocatorSize=1024"),through(TracePlugin,"")]
+		cCall = Sample.eEnt;
+	};
+
+	cell tTask SimpleTask {
+		cBody = Simple.eBody;
+		priority = 0;
+		stackSize = 4096;
+		taskAttribute = C_EXP( "TA_ACT" );
+	};
+}; **********************/   /* region rTransparent */
+

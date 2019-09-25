@@ -1,16 +1,11 @@
-# このファイルは tecsgen により自動生成されました
-# Makefile.temp は gen の一つ上のディレクトリに移して使用します
-#  % mv Makefile.temp Makefile
-# 
-# clean のデフォルト動作は $(GEN_DIR)/Makefile.* を削除します
-
 # 変数 #_MVAR_#
 TARGET = recursive_composite.exe
 TIMESTAMP = tecsgen.timestamp
 TECSGEN_EXE = tecsgen
 BASE_DIR = .
 CC = gcc
-CFLAGS = -I $(BASE_DIR)/. -I $(BASE_DIR)/../RUNTIME/runtime/test -I $(BASE_DIR)/../RUNTIME/runtime/include -I $(GEN_DIR) -D "Inline=static inline"
+#CFLAGS = -I $(BASE_DIR)/. -I $(BASE_DIR)/../RUNTIME/runtime/test -I $(BASE_DIR)/../RUNTIME/runtime/include -I $(GEN_DIR) -D "Inline=static inline"
+CFLAGS = -I ../../tecsgen/tecs -I ../cygwin -I $(BASE_DIR)/. -I $(BASE_DIR)/../RUNTIME/runtime/test -I $(BASE_DIR)/../RUNTIME/runtime/include -I $(GEN_DIR) -D "Inline=static inline"
 LD = gcc
 LDFLAGS = 
 GEN_DIR = $(BASE_DIR)/gen_rec_comp
@@ -52,6 +47,19 @@ tecs : $(TIMESTAMP)
 $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN_EXE)  -L ../RUNTIME/generator -I../RUNTIME/runtime/test -I../RUNTIME/runtime/include --gen=gen_rec_comp recursive_composite.cdl
 	touch $(TIMESTAMP)
+
+tecsflow : tcflow
+	tecsflow -g $(GEN_DIR)
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS)
+	tcflow -g $(GEN_DIR) -c 'gcc -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+#	tcflow -g $(GEN_DIR) $^
+#	tcflow -c 'gcc -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
 
 # generic target for objs
 $(_TECS_OBJ_DIR)%.o : %.c

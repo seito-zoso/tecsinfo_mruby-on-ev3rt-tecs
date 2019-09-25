@@ -1,3 +1,38 @@
+/*
+ *   Copyright (C) 2008-2017 by TOPPERS Project
+ *
+ *  上記著作権者は，以下の(1)〜(4)の条件を満たす場合に限り，本ソフトウェ
+ *  ア（本ソフトウェアを改変したものを含む．以下同じ）を使用・複製・改
+ *  変・再配布（以下，利用と呼ぶ）することを無償で許諾する．
+ *  (1) 本ソフトウェアをソースコードの形で利用する場合には，上記の著作
+ *      権表示，この利用条件および下記の無保証規定が，そのままの形でソー
+ *      スコード中に含まれていること．
+ *  (2) 本ソフトウェアを，ライブラリ形式など，他のソフトウェア開発に使
+ *      用できる形で再配布する場合には，再配布に伴うドキュメント（利用
+ *      者マニュアルなど）に，上記の著作権表示，この利用条件および下記
+ *      の無保証規定を掲載すること．
+ *  (3) 本ソフトウェアを，機器に組み込むなど，他のソフトウェア開発に使
+ *      用できない形で再配布する場合には，次のいずれかの条件を満たすこ
+ *      と．
+ *    (a) 再配布に伴うドキュメント（利用者マニュアルなど）に，上記の著
+ *        作権表示，この利用条件および下記の無保証規定を掲載すること．
+ *    (b) 再配布の形態を，別に定める方法によって，TOPPERSプロジェクトに
+ *        報告すること．
+ *  (4) 本ソフトウェアの利用により直接的または間接的に生じるいかなる損
+ *      害からも，上記著作権者およびTOPPERSプロジェクトを免責すること．
+ *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
+ *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
+ *      免責すること．
+ * 
+ *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
+ *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
+ *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
+ *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
+ *  の責任を負わない．
+ * 
+ *  @(#) $Id: nTECSInfo_tNamespaceInfo.c 2656 2017-06-24 11:57:31Z okuma-top $
+ */
+
 /* #[<PREAMBLE>]#
  * #[<...>]# から #[</...>]# で囲まれたコメントは編集しないでください
  * tecsmerge によるマージに使用されます
@@ -9,9 +44,9 @@
  * call port: cSignatureInfo signature: nTECSInfo_sSignatureInfo context:task optional:true
  *   bool_t     is_cSignatureInfo_joined(int subscript)        check if joined
  *   ER             cSignatureInfo_getName( subscript, char_t* name, int_t max_len );
- *   void           cSignatureInfo_getNameLength( subscript, uint16_t* len );
- *   void           cSignatureInfo_getNFunction( subscript, int32_t* num );
- *   void           cSignatureInfo_getFunctionInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sFunctionInfo )* desc );
+ *   uint16_t       cSignatureInfo_getNameLength( subscript );
+ *   uint32_t       cSignatureInfo_getNFunction( subscript );
+ *   ER             cSignatureInfo_getFunctionInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sFunctionInfo )* desc );
  *       subscript:  0...(NCP_cSignatureInfo-1)
  *   [ref_desc]
  *      Descriptor( nTECSInfo_sSignatureInfo ) cSignatureInfo_refer_to_descriptor( int_t subscript );
@@ -19,19 +54,19 @@
  * call port: cCelltypeInfo signature: nTECSInfo_sCelltypeInfo context:task optional:true
  *   bool_t     is_cCelltypeInfo_joined(int subscript)        check if joined
  *   ER             cCelltypeInfo_getName( subscript, char_t* name, int_t max_len );
- *   void           cCelltypeInfo_getNameLength( subscript, uint16_t* len );
- *   void           cCelltypeInfo_getNAttr( subscript, int32_t* nAttr );
- *   void           cCelltypeInfo_getAttrInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sAttrVarInfo )* desc );
- *   void           cCelltypeInfo_getNVar( subscript, int32_t* nVar );
- *   void           cCelltypeInfo_getVarInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sAttrVarInfo )* desc );
- *   void           cCelltypeInfo_getNCall( subscript, int32_t* nCall );
- *   void           cCelltypeInfo_getCallInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sCallInfo )* desc );
- *   void           cCelltypeInfo_getNEntry( subscript, int32_t* nEntry );
- *   void           cCelltypeInfo_getEntryInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sEntryInfo )* desc );
+ *   uint16_t       cCelltypeInfo_getNameLength( subscript );
+ *   uint32_t       cCelltypeInfo_getNAttr( subscript );
+ *   ER             cCelltypeInfo_getAttrInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sVarDeclInfo )* desc );
+ *   uint32_t       cCelltypeInfo_getNVar( subscript );
+ *   ER             cCelltypeInfo_getVarInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sVarDeclInfo )* desc );
+ *   uint32_t       cCelltypeInfo_getNCall( subscript );
+ *   ER             cCelltypeInfo_getCallInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sCallInfo )* desc );
+ *   uint32_t       cCelltypeInfo_getNEntry( subscript );
+ *   ER             cCelltypeInfo_getEntryInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sEntryInfo )* desc );
  *   bool_t         cCelltypeInfo_isSingleton( subscript );
  *   bool_t         cCelltypeInfo_isIDX_is_ID( subscript );
- *   bool_t         cCelltypeInfo_hasCB( subscript );
- *   bool_t         cCelltypeInfo_hasINIB( subscript );
+ *   uint32_t       cCelltypeInfo_sizeOfCB( subscript );
+ *   uint32_t       cCelltypeInfo_sizeOfINIB( subscript );
  *       subscript:  0...(NCP_cCelltypeInfo-1)
  *   [ref_desc]
  *      Descriptor( nTECSInfo_sCelltypeInfo ) cCelltypeInfo_refer_to_descriptor( int_t subscript );
@@ -39,13 +74,13 @@
  * call port: cNamespaceInfo signature: nTECSInfo_sNamespaceInfo context:task optional:true
  *   bool_t     is_cNamespaceInfo_joined(int subscript)        check if joined
  *   ER             cNamespaceInfo_getName( subscript, char_t* name, int_t max_len );
- *   void           cNamespaceInfo_getNameLength( subscript, uint16_t* len );
- *   void           cNamespaceInfo_getNNamespace( subscript, int32_t* num );
- *   void           cNamespaceInfo_getNamespaceInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sNamespaceInfo )* des );
- *   void           cNamespaceInfo_getNSignature( subscript, int32_t* num );
- *   void           cNamespaceInfo_getSignatureInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sSignatureInfo )* des );
- *   void           cNamespaceInfo_getNCelltype( subscript, int32_t* num );
- *   void           cNamespaceInfo_getCelltypeInfo( subscript, int32_t ith, Descriptor( nTECSInfo_sCelltypeInfo )* des );
+ *   uint16_t       cNamespaceInfo_getNameLength( subscript );
+ *   uint32_t       cNamespaceInfo_getNNamespace( subscript );
+ *   ER             cNamespaceInfo_getNamespaceInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sNamespaceInfo )* des );
+ *   uint32_t       cNamespaceInfo_getNSignature( subscript );
+ *   ER             cNamespaceInfo_getSignatureInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sSignatureInfo )* des );
+ *   uint32_t       cNamespaceInfo_getNCelltype( subscript );
+ *   ER             cNamespaceInfo_getCelltypeInfo( subscript, uint32_t ith, Descriptor( nTECSInfo_sCelltypeInfo )* des );
  *       subscript:  0...(NCP_cNamespaceInfo-1)
  *   [ref_desc]
  *      Descriptor( nTECSInfo_sNamespaceInfo ) cNamespaceInfo_refer_to_descriptor( int_t subscript );
@@ -54,6 +89,7 @@
  * #[</PREAMBLE>]# */
 
 /* Put prototype declaration and/or variale definition here #_PAC_# */
+#include <string.h>
 #include "nTECSInfo_tNamespaceInfo_tecsgen.h"
 
 #ifndef E_OK
@@ -86,6 +122,12 @@ eNamespaceInfo_getName(CELLIDX idx, char_t* name, int_t max_len)
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
+	name[ max_len - 1 ] = '\0';
+	strncpy( name, ATTR_name, max_len );
+  if( name[ max_len - 1 ] ){
+      name[ max_len - 1 ] = '\0';
+      ercd = E_NOMEM;
+  }
 
 	return(ercd);
 }
@@ -95,8 +137,8 @@ eNamespaceInfo_getName(CELLIDX idx, char_t* name, int_t max_len)
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getNameLength
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getNameLength(CELLIDX idx, uint16_t* len)
+uint16_t
+eNamespaceInfo_getNameLength(CELLIDX idx)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -107,7 +149,7 @@ eNamespaceInfo_getNameLength(CELLIDX idx, uint16_t* len)
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+	return strlen( ATTR_name ) + 1;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getNNamespace
@@ -115,8 +157,8 @@ eNamespaceInfo_getNameLength(CELLIDX idx, uint16_t* len)
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getNNamespace
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getNNamespace(CELLIDX idx, int32_t* num)
+uint32_t
+eNamespaceInfo_getNNamespace(CELLIDX idx)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -127,7 +169,7 @@ eNamespaceInfo_getNNamespace(CELLIDX idx, int32_t* num)
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+  return NCP_cNamespaceInfo;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getNamespaceInfo
@@ -135,8 +177,8 @@ eNamespaceInfo_getNNamespace(CELLIDX idx, int32_t* num)
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getNamespaceInfo
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getNamespaceInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_sNamespaceInfo )* des)
+ER
+eNamespaceInfo_getNamespaceInfo(CELLIDX idx, uint32_t ith, Descriptor( nTECSInfo_sNamespaceInfo )* des)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -147,7 +189,8 @@ eNamespaceInfo_getNamespaceInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+  *des = cNamespaceInfo_refer_to_descriptor( ith );
+  return E_OK;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getNSignature
@@ -155,8 +198,8 @@ eNamespaceInfo_getNamespaceInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getNSignature
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getNSignature(CELLIDX idx, int32_t* num)
+uint32_t
+eNamespaceInfo_getNSignature(CELLIDX idx)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -167,7 +210,7 @@ eNamespaceInfo_getNSignature(CELLIDX idx, int32_t* num)
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+  return NCP_cSignatureInfo;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getSignatureInfo
@@ -175,8 +218,8 @@ eNamespaceInfo_getNSignature(CELLIDX idx, int32_t* num)
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getSignatureInfo
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getSignatureInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_sSignatureInfo )* des)
+ER
+eNamespaceInfo_getSignatureInfo(CELLIDX idx, uint32_t ith, Descriptor( nTECSInfo_sSignatureInfo )* des)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -187,7 +230,8 @@ eNamespaceInfo_getSignatureInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+	*des = cSignatureInfo_refer_to_descriptor( ith );
+  return E_OK;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getNCelltype
@@ -195,8 +239,8 @@ eNamespaceInfo_getSignatureInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getNCelltype
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getNCelltype(CELLIDX idx, int32_t* num)
+uint32_t
+eNamespaceInfo_getNCelltype(CELLIDX idx)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -207,7 +251,7 @@ eNamespaceInfo_getNCelltype(CELLIDX idx, int32_t* num)
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
-
+  return NCP_cCelltypeInfo;
 }
 
 /* #[<ENTRY_FUNC>]# eNamespaceInfo_getCelltypeInfo
@@ -215,8 +259,8 @@ eNamespaceInfo_getNCelltype(CELLIDX idx, int32_t* num)
  * global_name:  nTECSInfo_tNamespaceInfo_eNamespaceInfo_getCelltypeInfo
  * oneway:       false
  * #[</ENTRY_FUNC>]# */
-void
-eNamespaceInfo_getCelltypeInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_sCelltypeInfo )* des)
+ER
+eNamespaceInfo_getCelltypeInfo(CELLIDX idx, uint32_t ith, Descriptor( nTECSInfo_sCelltypeInfo )* des)
 {
 	CELLCB	*p_cellcb;
 	if (VALID_IDX(idx)) {
@@ -227,7 +271,9 @@ eNamespaceInfo_getCelltypeInfo(CELLIDX idx, int32_t ith, Descriptor( nTECSInfo_s
 	} /* end if VALID_IDX(idx) */
 
 	/* Put statements here #_TEFB_# */
+	*des = cCelltypeInfo_refer_to_descriptor( ith );
 
+  return E_OK;
 }
 
 /* #[<POSTAMBLE>]#

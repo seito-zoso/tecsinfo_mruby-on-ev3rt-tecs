@@ -4,6 +4,7 @@
 class MyDomainPlugin < DomainPlugin
 
   def initialize( region, domain_type_name, option )
+    super
     print "MyDomainPlugin: initialize: region=#{region.get_name}, domainTypeName=#{domain_type_name}, option=#{option}\n"
   end
 
@@ -25,5 +26,9 @@ class MyDomainPlugin < DomainPlugin
   end
 
   def self.gen_post_code file
+  end
+
+  def get_kind
+    :kernel
   end
 end

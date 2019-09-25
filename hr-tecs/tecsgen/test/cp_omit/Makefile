@@ -14,3 +14,8 @@ tecs :
 clean :
 	make -f Makefile1 clean
 	make -f Makefile2 clean
+
+.PHONY : tecsflow
+tecsflow :
+	make -f Makefile1 tecsflow
+	make -f Makefile2 tecsflow

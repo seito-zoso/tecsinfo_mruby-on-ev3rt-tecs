@@ -80,6 +80,21 @@ tecs : $(PRE_TECSGEN_TARGET) $(TIMESTAMP) $(POST_TECSGEN_TARGET)
 
 $(TIMESTAMP) : $(TECS_IMPORTS)
 	$(TECSGEN)  -I ../cygwin -I $(TECSPATH) -I ../RUNTIME/runtime/include -I ../RUNTIME/runtime/test -I src --gen=gen_comp composite.cdl
+
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecs
+
+tcflow : tecs
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+#####  end TECSFlow targets  #####
+
 # generic target for objs
 $(_TECS_OBJ_DIR)%.o : %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -111,3 +126,7 @@ $(_TECS_OBJ_DIR)tPtrAttr.o : tPtrAttr.c
 $(_TECS_OBJ_DIR)tSizeArray.o : tSizeArray.c
 	$(CC) -c $(CFLAGS) -o $@ $<
  
+
+TECS_SRCS = $(TECS_COBJS:%.o=%.c)
+echo :
+	echo $(TECS_SRCS)

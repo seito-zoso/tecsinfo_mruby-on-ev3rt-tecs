@@ -1,23 +1,26 @@
 PACKAGE tecsgen
-VERSION 1.5.A.5
+VERSION 1.7.0
 
 MANIFEST
 Makefile
 README-eng.txt
 README.txt
 
-doc/C2TECSBrdigePlugin.txt
-doc/README-tecscde.txt
-doc/RepeatCellPlugin+RepeatJoinPlugin.txt
-doc/changes.txt
-
 set_env.bat
 set_env.sh
-tecs/mruby
-tecs/posix
-tecs/rpc
-tecs/tecs.h
-tecs/tecs.xsd
+
+INCLUDE tecsgen/MANIFEST_tecsgen_body
+INCLUDE test/MANIFEST_tecsgen_test
+
+doc/C2TECSBrdigePlugin.txt
+doc/HRP-access.pptx
+doc/README-tecscde.txt
+doc/RepeatCellPlugin+RepeatJoinPlugin.txt
+doc/TECSInfo-171016.pptx
+doc/TOPPERS_HRP3におけるTECSの使用方法.pdf
+doc/changes.txt
+doc/how-to-release.txt
+doc/実行時情報機能TECSInfo.pdf
 
 glade/NewCell.png
 glade/SelectArrow.png
@@ -102,6 +105,3 @@ samples/SimpleSample/SimpleSampleTransparentRPC/SimpleSample-trace.cdl
 samples/SimpleSample/SimpleSampleTransparentRPC/SimpleSample.cdl
 samples/SimpleSample/SimpleSampleTransparentRPC/src/tSample.c
 samples/SimpleSample/SimpleSampleTransparentRPC/src/tSimple.c
-
-INCLUDE tecsgen/MANIFEST_tecsgen_body
-INCLUDE test/MANIFEST_tecsgen_test

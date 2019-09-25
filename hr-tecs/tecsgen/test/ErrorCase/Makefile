@@ -157,7 +157,7 @@ domainPlugin-err:
 
 .PHONY: cell-err
 cell-err:
-	$(TEST_ERR.SH) 8 1 -I ../cygwin $@.cdl
+	$(TEST_ERR.SH) 7 1 -I ../cygwin $@.cdl
 
 #####
 

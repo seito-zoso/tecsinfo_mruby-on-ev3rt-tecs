@@ -20,7 +20,8 @@ test_err :
 
 test_exec :
 	# for cmd in */*.exe */*/*.exe ; do echo $$PWD/$$cmd ; $$cmd ; done
-	find test \( -name '*[Oo]paque*' -prune \) -o -name '*.exe' -exec echo exec: '<<<' '{}' '>>>' \; -exec '{}' \;
+	find test \( -name '*[Oo]paque*' -prune \) -o \( -name mruby -prune \) -o -name '*.exe' -exec echo exec: '<<<' '{}' '>>>' \; -exec '{}' \;
+	cd test/mruby; make test_exec
 
 clean :
 	cd tecsgen ; make clean2

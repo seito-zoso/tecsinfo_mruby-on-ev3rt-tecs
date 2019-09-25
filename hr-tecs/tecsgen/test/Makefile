@@ -68,7 +68,10 @@ TARGETS = \
 	cp_omit \
 	NotificationPlugin \
 	restrict \
-	dynamic
+	dynamic \
+	TECSInfo \
+	TECSInfoAccessor \
+	mruby
 
 #	optimize.1 \
 
@@ -161,6 +164,9 @@ clean:
 	cd NotificationPlugin ; make clean
 	cd restrict ; make clean
 	cd dynamic ; make clean
+	cd TECSInfo ; make clean
+	cd TECSInfoAccessor ; make clean
+	cd mruby ; make clean
 
 
 SINGLE_OBJ = \
@@ -460,6 +466,18 @@ restrict :
 .PHONY: dynamic
 dynamic :
 	cd dynamic ; make TECSGEN=$(TECSGEN_EXE)
+
+.PHONY: TECSInfo
+TECSInfo :
+	cd TECSInfo ; make TECSGEN=$(TECSGEN_EXE)
+
+.PHONY: TECSInfoAccessor
+TECSInfoAccessor :
+	cd TECSInfoAccessor ; make TECSGEN=$(TECSGEN_EXE)
+
+.PHONY: mruby
+mruby :
+	cd mruby ; make total TECSGEN=$(TECSGEN_EXE)
 
 .c.o:
 	gcc $(COPT) -o $@ $<

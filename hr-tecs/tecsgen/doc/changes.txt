@@ -1,5 +1,162 @@
 ★：過去互換性がなくなったもの
 
+19/6/9 V1.7.0RC1
+V1.7.0 release candidate
+
+19/6/9 V1.G.6
+V1.7.0 release candidate (TECS-Flow ブランチ最終アップ)
+
+19/5/3 V1.G.5
+[不具合] #1174 Descriptor 型の変数を var に置くと tecsgen で Ruby 例外
+[追加]   #1173 TECSInfoAccessor のセルタイプコードの未実装関数の実装
+[不具合] #1159 「sTECSInfo の findRawEntryDescriptor に配列添数(ith) 引数がない」 の取りやめ
+[不具合] #1172 TECSInfo 下で return を返さないケース
+[内変]   #1171 prio 順にポストコードを生成 & ポストコードをプラグインごとに別ファイルで生成、生成直後に import
+[仕変]   #1170 「P2007 $1: fail to generate post code」 は出なくなった
+               以下が出る
+                  P2001 NOPlugin.rb : プラグインの読み込みに失敗しました
+                  S1166 NOPlugin: プラグインの生成に失敗しました
+[追加]   #1169 TECSInfo::sAccessor に getSignatureNameOfCellEntry 関数を追加 (MrubyInfoBridgePlugin 用)
+[追加]   #1168 TECSInfo.cdl に import_C( "t_syslog.h" ) を追加
+[仕変]   #1155 tecsgen のエラーの表示方法を gcc に合わせてほしい (IDE でソース表示するため)
+
+19/3/25 V1.G.4
+[不具合] #1166 MrubyBridgeCellPlugin: namespace 下のセルタイプを持つセルに対応できていなかった
+[仕変]   #1167 sTECSInfoAccessor, tTECSInfoAccessor を namespace nTECSInfo の下に移動
+
+19/3/13 V1.G.2
+[追加]   #1152 TECS-flow 対応 (todo-TECS-flow.txt 参照)
+
+19/3/18 V1.6.4
+[内変]   #1162 "tecs/rpc/tTDR_inline.h:746:14: warning: 'val' may be used uninitialized"
+[仕変]   #1163 "celltype 'tCelltype' has cells in multi-domain." を verbose 時のみ出力
+[仕変]   #1164 動的結合のチェックを verbose の時のみに出力
+[内変]   #1165 OpaqueRPC で Cコンパイル時に state_ に対し set but not used 警告が出る
+
+19/3/16 V1.6.3
+[不具合] #1134 TECSPointer.hのVALCHECK_INT,VALCHECK_UINTで型名に"_t"を追加している
+[不具合] #1153 警告「TECSPointer.h:104:26: 警告: 左シフト回数 >= 型の幅となっています 」が発生
+[不具合] #1154 IDからCBに変換するテーブルがRAMに配置される
+[仕変]   #1155 tecsgen のエラーの表示方法を gcc に合わせてほしい (IDE でソース表示するため)
+[内変]   #1157 IDからINIB/CBを取り出すためのテーブルの名称
+[不具合] #1158 複数のユーザドメインからの拡張サービスコール 
+[不具合] #1159 sTECSInfo の findRawEntryDescriptor に配列添数(ith) 引数がない
+[不具合] #1160 HRPSVC (拡張サービスコール): 複数ドメインから結合時 TACP の括弧が不足
+[不具合] #1161 セルタイプ tecsgen ヘッダｓのディスクリプタ参照関数で p_cellcb が set but not used になる 
+[不具合] #1151 .cdl 内のタグなし構造体の内部生成されるタグ名に '$' が含まれる (gccではエラーなく通る)
+
+18/8/15 V1.6.2
+[不具合] #1147 prb_strの使用箇所で警告がでる 
+[仕変]   #1148  restrictが正しく動作していない？
+            (前)無所属かつ active から参照されている場合、restrict を参照しない
+            (後)無所属の場合、restrict 指定されている場合、それに従う
+                            restrict 指定がない場合、すべてのドメインから結合可能とする
+[追加]   #1149 restrict が指定されているが、参照されない場合、効果なしを警告する 
+              (現時点では HRPSVCPlugin からのみ参照される)
+        
+18/5/7 V1.6.1
+[追加]   #1140  TECSInfo に RawEntryDescriptorInfo を追加
+[追加]   #1143  複数ドメインから共有されているカーネルオブジェクトが無所属でない場合、ジェネレータエラーとする (さもないと実行時アクセス権エラーになる)
+[追加]   #1141  HRPKernelObjectPlugin: 無所属のセルのアクセス許可ベクタを設定
+[不具合] #1142  HRPRPCPlugin に必要な tMessageBufferChannel.cdl を追加
+[不具合] #1144  HRPRPCPlugin でメッセージバッファのアクセス許可ベクトルの設定が正しくない場合がある
+
+18/4/14 V1.6.0
+[不具合] #1128  tecsgenで生成したt*_templ.c内の先頭のコメントでファイル名がt*_template.cになっている 
+[不具合] #1129  test/mruby/MrubyBridge-region/ のビルドに失敗する (SimpleSample.cdl に BOM が含まれていた)
+[作業]   #1133  tecsgen-1.6.0 個別パッケージリリース調整 (MANIFEST, release.sh の変更)
+              tgz を生成する際、ディレクトリにバージョン名を付ける 
+
+18/4/1 V1.6.0-alpha4
+★[不具合] #1127  TECSInfo の var の値の所在情報がない
+[不具合] #1123  import文に'-'を含むCDLファイル名を指定すると、構文エラーになる
+
+18/3/25 V1.6.0-alpha3
+[不具合] #1124  メンバーのない INIB が出力される
+[不具合] #1125  HRPHandlerPlugin, HRP2HandlerPlugin で CB, INIB ともに最適化で消えるケースが想定されていない (ATT_INI)
+[不具合] #1126   OutOfDomain 指定されたリージョンの .cfg が tecsgen.cfg から INCLUDE されない
+
+18/3/17 V1.6.0-alpha2
+[追加]  ＃1121  -v で domain 情報を出力
+★[仕変]再 #1115 カーネルオブジェクトの ATT_MOD を出るようにする
+              => 複数のドメインから参照されるカーネルオブジェクトは、無所属でなければならない
+                 (これは、HRP3 の仕様にはない制約.ただしアクセス許可ベクトルは自動設定される．
+                 それでも無所属セルからカーネルオブジェクトへの結合があると、すべてにアクセス
+                 許可が与えられる; フロー追跡できていない)
+[追加]再   #1120 Makefile.tecsgen に TECS_KERNEL_COBJS, TECS_USER_COBJS, TECS_OUTOFDOMAIN_COBJS　変数を出力 (ドメインありの場合のみ)
+
+18/3/11 V1.6.0-alpha
+[仕変]  #1111   cdl_warning( "W9999 $1 in same domain", rn ) を info に変更する
+              I9999 $1: restrict calling domain to $2, which is same domain as the cell locates
+[仕変]  #1112   NotifierPlugin の警告の行番号を変更 (NTF1004, NTF1006)
+               プラグインが呼び出された行番号ではなく、セルの行番号とする
+[追加]  #1113  RepeatCellPlugin, RepeatJoinPlugin を標準に入れてほしい
+[不具合] #1114 import_C で ',' 演算子が構文エラー
+★[仕変] #1115 カーネルオブジェクトの ATT_MOD を出るようにする
+[不具合] #1116 idx_is_id の場合の INIB_tab が const になっていない
+[不具合] #1117 DomainPlugin でエラーが出力されない (以前は、そもそもエラー発生するケースはないが、プラグインの仕組みとして備わっていなかった）
+[不具合] #1118 HRPPlugin でドメイン種別に 'kernel', 'user', 'OutOfDomain' 以外が指定されても、ジェネレータではエラーにならない
+            (cfg の段階で、SAC_xxx の引数が悪くエラーとなる)
+[不具合] #1119 HRP2Plugin でドメイン種別に 'trusted, 'nontrusted, 'OutOfDomain' 以外が指定されても、ジェネレータではエラーにならない
+[追加]   #1120 Makefile.tecsgen に TECS_KERNEL_COBJS, TECS_USER_COBJS, TECS_OUTOFDOMAIN_COBJS　変数を出力 (ドメインありの場合のみ)
+
+18/2/11 V1.5.2-temp4
+[追加]   #1106 import_C で gcc の __asm__ の適合性の改善
+[追加]   #1107 受け口最適化の抑止オプション --unoptimize-entry の追加
+[不具合] #1108 TECSInfo: omit 指定された呼び口のオフセット値のコード (ex:tTask_cTaskBody__offset)
+[不具合] #1109 TECSInfo: nTECSInfo_tCellInfo_factory.h に CBP のプロトタイプ宣言がない (IDX_is_ID の場合、ビルド時エラー)
+[不具合] #1110 --generate-all-template を指定したとき、プラグイン生成しないセルタイプのセルタイプコードを誤って生成する。本来テンプレートコードを生成すべき。
+             再利用 CDL (<> で囲んで import) で生成されたセルタイプを import した場合、テンプレートコードを生成する
+             （期待される仕様は、プラグイン生成しない CDL ファイル内にあるセルタイプに対して、テンプレートコードを生成する)
+
+18/1/21 V1.5.2-temp3
+★[仕変] #1097 "$id$" を "$ct$_$cell$" から "$ct$_$cell_global$" に変更(region への対応のため)
+               自前で $id$ を変更していた以下も併せて変更
+                 HRP2KernelObjectPlugin.rb, HRP2TaskPlugin.rb
+                 HRPKernelObjectPlugin.rb,  HRPPlugin.rb
+[不具合] #1098 subst_name で $ct_global$ の置換が行われない(例えば FACTORY で置換されない)
+★[不具合] #1099 スループラグインの結合先の受け口の配列に対応していない (配列添数)
+★[不具合] #1100 スループラグインの結合先の受け口の配列に対応していない
+               以下のプラグインについて、受け口配列対応に修正
+               ThroughPlugin.rb, HRP2RPCPlugin.rb, HRP2SVCPlugin.rb
+               HRPRPCPlugin.rb, HRPSVCPlugin.rb, OpaqueRPCPlugin.rb, RPCPlugin.rb
+               SharedOpaqueRPCPlugin.rb, SharedRPCPlugin.rb, TracePlugin.rb
+[不具合]  #1101 OpaqueRPC のアンマーシャラ関数 eService_main で値を返さない return が出力される
+
+17/12/4 V1.5.2-temp2
+
+[追加]   #1102 tMessageBufferCEP を追加
+[追加]   #1096 nTECSInfo::tTECSInfoAccessor.c を追加
+[追加]   #1103 MrubyBridgePlugin 関係のテストコードの追加
+[不具合] #1104 through プラグインセルが生成するセルに受け口 eThroughEntry がないと Ruby 例外
+              throughプラグインは、(指定セル名).eThroughEntry を生成しなければならない
+[不具合] #1105 RegionInfo セル内に子リージョンの ReigionInfo への結合 (呼び口定義) が出力されない
+
+
+17/11/5 V1.5.2
+[仕変]    #1091 TECSInfo: ポストコード(tmp_plugin_post_code.cdl)で生成されるセルを対象に含めない
+[不具合]  #1092 Cell#check_restrict_list: not region エラー出力で Ruby 例外
+[追加]    #1093 nMruby_tMrubyProc.c を復活 (新たに書き下ろして、TOPPERS ライセンス化)
+[仕変]    #1094 mruby 1.1.0 サポートを取りやめ
+[追加]    #1095 mruby テストコードの取り込み (#1093 関連)
+[作業中]  #1096 TECSInfoAccessor の追加
+
+17/9/3 V1.5.1
+[仕変]   #1083 Descriptor の引数 (signature) を前方参照可能とする
+[仕変]   #993  long double をサポートして欲しい (#944 関連)
+[不具合] #1082 セルタイプが無い時 set_f_def で Ruby 例外
+[不具合] #1048 DomainPlugin に gen_factory を設ける
+[不具合] #1049 #1048 関連: HRPTaskPlugin の gen_factory の内容を HRPPlugin へ移す   <<< これは hrp3+tecs の変更
+
+17/6/15  V1.5.0
+V1.5.A.6 を TECS ジェネレータ V1.5.0 に変更 (リリース)
+
+17/5/29  V1.5.A.6
+[追加]  #1070 複合セルタイプ(composite)プラグインの新設
+[追加]  #1071 MrubyBridgeCompositePlugin (複合セルタイププラグイン) の新設
+[追加]  #1072 セルタイププラグインの new_cell を、すべてのセルに対して呼び出されるように変更
+[追加]  #1073 MrubyBridge*Plugin のオプション対応
+
 17/5/8  V1.5.A.5
 [不具合] #1063 tecsgen/tecs/mruby/tecs_mruby.h に typedef int mrb_context; を追加
 [不具合] #1064 mruby-on-ev3rt+tecs_package-beta2.0.0 ビルド時の警告 
@@ -40,7 +197,7 @@
 [不具合]  #1002 tecsmerge の非受け口関数 (POSTAMBLE部) の行頭に '{' があるとエラーになる 	
 [不具合]  #1003  $cbp$ が CB がないが、INIB がある場合に、存在しない CB へのポインタを出力する
                 (コンパイル時にエラーとなる. CB も INIB も存在しなければ、NULL )
-                #1004 idx_is_id が true の場合(domain の場合は未指定でも true) の CBP のプロトタイプ宣言
+[不具合]  #1004 idx_is_id が true の場合(domain の場合は未指定でも true) の CBP のプロトタイプ宣言
 [不具合]  #1005  MrubyBridgePlugin-test のビルドに失敗
                  #997 の修正により ブリッジセルタイプの idx_is_id が効くようになったことで、不具合が顕在化
                  #1003 の変更に加えて、CBP へのプロトタイプ宣言を追加

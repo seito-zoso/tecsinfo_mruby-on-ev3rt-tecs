@@ -84,3 +84,5 @@ $(GEN_DIR)/tSimpleClient_templ.o : $(GEN_DIR)/tSimpleClient_templ.c
 tSimpleClient.o : tSimpleClient.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+tcflow : $(CELLTYPE_SRCS)
+	ruby ../../tecsgen/tcflow.rb  -c 'gcc -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./ -D __inline=inline' $^

@@ -1,4 +1,4 @@
-CYGPATH=../../cygwin
+CYGPATH=../../../test/cygwin
 TARGET_BASE = SimpleSample
 BASE_DIR = .
 GEN_DIR = $(BASE_DIR)/gen
@@ -68,7 +68,7 @@ clean :
 tecs : $(PRE_TECSGEN_TARGET) $(TIMESTAMP) $(POST_TECSGEN_TARGET)
 
 $(TIMESTAMP) : $(TECS_IMPORTS)
-	$(TECSGEN_EXE)  -k euc -I src -I gen -I $(CYGPATH) -I $(TECSPATH) SimpleSample.cdl
+	$(TECSGEN_EXE)  -I src -I gen -I $(CYGPATH) -I $(TECSPATH) SimpleSample.cdl
 	touch $(TIMESTAMP)
 
 # generic target for objs

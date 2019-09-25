@@ -49,7 +49,7 @@ Copyright (C) 2014-2015 by TOPPERS Project
  TOPPERS PROJECT BE LIABLE FOR ANY TYPE OF DAMAGE DIRECTLY OR
  INDIRECTLY CAUSED FROM THE USE OF THIS SOFTWARE.
 
- $Id: tmodel.rb 2142 2014-11-02 11:53:55Z okuma-top $
+ $Id: saveload.rb 2780 2018-02-11 11:22:33Z okuma-top $
 
 =end
 
@@ -255,7 +255,7 @@ module TECSCDE
               return
             end
             # eport = rhs_cell.get_eports[ join.get_port_name ]
-            eport = rhs_cell.get_eport_for_new_join( join.get_port_name, join.get_rhs_subscript )
+            eport = rhs_cell.get_eport_for_new_join( join.get_port_name, join.get_rhs_subscript1 )
             # p "new_join #{lhs_cell.get_name}.#{cport.get_name} => #{rhs_cell.get_name}.#{eport.get_name}"
             new_join_ = new_join cport, eport
             new_join_.set_editable( join.get_locale )

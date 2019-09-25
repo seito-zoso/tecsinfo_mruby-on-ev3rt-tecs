@@ -64,6 +64,21 @@ tecsgen.timestamp : $(TECS_IMPORTS)
 	$(TECSGEN_EXE) -r -I../RUNTIME/tecs-runtime/target -I../RUNTIME/tecs-runtime/include -Igen -Isrc allocator.cdl
 	touch tecsgen.timestamp
 
+#####  TECSFlow targets  #####
+tecsflow : $(GEN_DIR)/tecsgen.rbdmp tcflow
+	tecsflow -g $(GEN_DIR)
+
+$(GEN_DIR)/tecsgen.rbdmp : tecsgen
+
+tcflow : tecsgen
+	make tcflow_exec
+
+tcflow_exec : $(GEN_DIR)/tcflow.rbdmp
+$(GEN_DIR)/tcflow.rbdmp : $(CELLTYPE_SRCS) $(PLUGIN_SRCS)
+	tcflow -g $(GEN_DIR) -c '$(CC) -E -DTECSFLOW -DTECSGEN $(CFLAGS) -I ./' $^
+
+#####  end TECSFlow targets  #####
+
 # Celltype: tAlloc
 $(GEN_DIR)/tAlloc_tecsgen.o : $(GEN_DIR)/tAlloc_tecsgen.c
 	$(CC) -c $(CFLAGS) -o $@ $<

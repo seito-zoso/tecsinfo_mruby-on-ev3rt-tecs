@@ -34,7 +34,7 @@
 #   アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
 #   の責任を負わない．
 #  
-#   $Id: SharedRPCPlugin.rb 2061 2014-05-31 22:15:33Z okuma-top $
+#   $Id: SharedRPCPlugin.rb 2952 2018-05-07 10:19:07Z okuma-top $
 #++
 
 require_tecsgen_lib "lib/GenTransparentMarshaler.rb"
@@ -61,7 +61,7 @@ class SharedRPCPlugin < ThroughPlugin
 
   #=== RPCPlugin の initialize
   #  説明は ThroughPlugin (plugin.rb) を参照
-  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, signature, celltype, caller_cell )
+  def initialize( cell_name, plugin_arg, next_cell, next_cell_port_name, next_cell_port_subscript, signature, celltype, caller_cell )
 
     # mikan プラグインオプション指定の不一致のチェック task_priority, 
 
@@ -235,6 +235,11 @@ EOT
     # nest = @next_cell.get_region.gen_region_str_pre file
     nest = @region.gen_region_str_pre file
     indent_str = "  " * nest
+    if @next_cell_port_subscript then
+      subscript = '[' + @next_cell_port_subscript.to_s + ']'
+    else
+      subscript = ""
+    end
 
     # セルを探す
     # path =["::",@next_cell.get_name]
@@ -290,7 +295,7 @@ EOT
     # セル本体の生成
     file.print <<EOT
 #{indent_str}cell #{@rpc_channel_celltype_name} #{@cell_name} {
-#{indent_str}  #{@call_port_name} = #{@next_cell.get_name}.#{@next_cell_port_name};
+#{indent_str}  #{@call_port_name} = #{@next_cell.get_name}.#{@next_cell_port_name}#{subscript};
 #{indent_str}  cTDR         = #{@shared_channel_cell}.eTDR;
 #{indent_str}  cEventflag   = #{@shared_channel_cell}.eEventflag;
 #{indent_str}  cLockChannel =  #{@shared_channel_cell}.eSemaphore[#{@sub_channel_no}];
