@@ -2,7 +2,7 @@
  *  TOPPERS/HSP Kernel
  *      Toyohashi Open Platform for Embedded Real-Time Systems/
  *      High Reliable system Profile Kernel
- * 
+ *
  *  Copyright (C) 2008-2014 by Embedded and Real-Time Systems Laboratory
  *              Graduate School of Information Science, Nagoya Univ., JAPAN
  *  Copyright (C) 2012 by Ubiquitous Computing and Networking Laboratory
@@ -30,13 +30,13 @@
  *      また，本ソフトウェアのユーザまたはエンドユーザからのいかなる理
  *      由に基づく請求からも，上記著作権者およびTOPPERSプロジェクトを
  *      免責すること．
- * 
+ *
  *  本ソフトウェアは，無保証で提供されているものである．上記著作権者お
  *  よびTOPPERSプロジェクトは，本ソフトウェアに関して，特定の使用目的
  *  に対する適合性も含めて，いかなる保証も行わない．また，本ソフトウェ
  *  アの利用により直接的または間接的に生じたいかなる損害に関しても，そ
  *  の責任を負わない．
- * 
+ *
  *  @(#) $Id: kernel.cdl 945 2010-06-04 05:02:10Z ritsumei-takuya $
  */
 
@@ -158,7 +158,7 @@ signature sInitializeRoutineBody {
 [active, generate(HRP2HandlerPlugin, "INIT_ROUTINE")]
 celltype tInitializeRoutine {
 	call	sInitializeRoutineBody	cInitializeRoutine;
-	
+
 	attr {
 		/*
 		 * 初期化処理ルーチンに指定できる属性はないため
@@ -259,7 +259,7 @@ signature sConfigInterrupt{
 };
 
 /*
- *  割込み要求ライン 
+ *  割込み要求ライン
  */
 [generate(HRP2HandlerPlugin, "CONFIG_INT")]
 celltype tConfigInterrupt {
@@ -293,7 +293,7 @@ composite tISRWithConfigInterrupt{
 		PRI   isrPriority = 1;
 		INTNO interruptNumber;
 
-		/* 割込み要求ライン */ 
+		/* 割込み要求ライン */
 		ATR   interruptAttribute =  C_EXP( "TA_NULL" );
 		PRI   interruptPriority;
 	};
@@ -304,7 +304,7 @@ composite tISRWithConfigInterrupt{
 		interruptNumber = composite.interruptNumber;
 		ciBody => composite.ciBody;
 	};
-	/* 割込み要求ライン */ 
+	/* 割込み要求ライン */
 	cell tConfigInterrupt ConfigInterrupt{
 		interruptNumber = composite.interruptNumber;
 		attribute = composite.interruptAttribute;
@@ -395,7 +395,7 @@ composite tCyclicTask {
 		taskAttribute      = C_EXP("TA_NULL");
 		exceptionAttribute = composite.exceptionAttribute;
 		priority           = composite.priority;
-		stackSize          = composite.stackSize;
+		systemStackSize          = composite.stackSize;
 
 		cBody => composite.cBody;
 		cExceptionBody => composite.cExceptionBody;
@@ -486,7 +486,7 @@ celltype tSemaphore{
 
 	[inline] entry  sSemaphore  eSemaphore;     /* セマフォ操作（タスクコンテキスト用）*/
 	[inline] entry  siSemaphore eiSemaphore;    /* セマフォ返却（非タスクコンテキスト用）*/
-	
+
 	attr {
 		ID      id = C_EXP( "SEMID_$id$" );
 		[omit]  ATR attribute;
@@ -525,10 +525,10 @@ signature siEventflag {
  */
 [generate(HRP2ObjectPlugin, "EVENTFLAG")]
 celltype tEventflag{
-    
+
     [inline] entry  sEventflag  eEventflag;     /* イベントフラグ操作（タスクコンテキスト用）*/
 	[inline] entry  siEventflag eiEventflag;    /* イベントフラグ操作（非タスクコンテキスト用）*/
-	
+
 	attr {
 		ID      id = C_EXP( "FLGID_$id$" );
 		/*
@@ -570,7 +570,7 @@ signature sDataqueue{
  */
 [context("non-task")]
 signature siDataqueue {
-	ER 		sendPolling([in] intptr_t data); 
+	ER 		sendPolling([in] intptr_t data);
 	ER 		sendForce([in] intptr_t data);
 };
 /*
@@ -581,7 +581,7 @@ celltype tDataqueue {
 
 	[inline] entry  sDataqueue  eDataqueue;     /* データキュー操作（タスクコンテキスト用）*/
 	[inline] entry  siDataqueue eiDataqueue;    /* データキュー操作（非タスクコンテキスト用）*/
-	
+
 	attr {
 		ID      id = C_EXP( "DTQID_$id$" );
 		/*
@@ -628,7 +628,7 @@ signature siPriorityDataqueue{
 celltype tPriorityDataqueue {
 	[inline] entry  sPriorityDataqueue  ePriorityDataqueue;     /* 優先度データキュー操作（タスクコンテキスト用）*/
 	[inline] entry  siPriorityDataqueue eiPriorityDataqueue;    /* 優先度データキュー操作（非タスクコンテキスト用）*/
-	
+
 	attr {
 		ID      id = C_EXP( "PDTQID_$id$" );
 		/*
@@ -666,12 +666,12 @@ signature sFixedSizeMemoryPool{
 [generate(HRP2ObjectPlugin, "FIXED_SIZE_MEMORYPOOL")]
 celltype tFixedSizeMemoryPool{
 	[inline] entry  sFixedSizeMemoryPool eFixedSizeMemoryPool; /* 固定長メモリプール操作（タスクコンテキスト用）*/
-	
+
 	attr {
 		ID id = C_EXP( "MPFID_$id$" );
 		/*
- 		 * TA_NULL デフォルト値（FIFO待ち） 
-		 * TA_TPRI 待ち行列をタスクの優先度順にする 
+ 		 * TA_NULL デフォルト値（FIFO待ち）
+		 * TA_TPRI 待ち行列をタスクの優先度順にする
 		 */
 		[omit] ATR attribute = C_EXP("TA_NULL");
 		[omit] uint32_t blockCount;
@@ -698,10 +698,10 @@ signature sKernel{
 	ER		getTaskId([out]ID *p_taskId);
 
 	ER		rotateReadyQueue([in] PRI taskPriority);
-	
+
 	ER		getTime([out]SYSTIM *p_systemTime);
 	ER		getMicroTime([out]SYSUTM *p_systemMicroTime);
-	
+
 	ER		lockCpu(void);
 	ER		unlockCpu(void);
 	ER		disableDispatch(void);
@@ -725,7 +725,7 @@ signature siKernel {
 	ER      getTaskId([out]ID *p_taskId);
 	ER		rotateReadyQueue([in] PRI taskPriority);
 	ER		getMicroTime([out]SYSUTM *p_systemMicroTime);
-	
+
 	ER      lockCpu(void);
 	ER      unlockCpu(void);
 
@@ -755,9 +755,9 @@ celltype tKernel{
 // =begin added by ishikawa
 signature sMessageBuffer{
     ER send([in, size_is(size)] const uint8_t* message, [in] uint32_t size);
-    ER sendPolling([in, size_is(size)] const uint8_t *message, 
+    ER sendPolling([in, size_is(size)] const uint8_t *message,
                    [in] uint32_t size);
-    ER sendTimeout([in, size_is(size)] const uint8_t *message, 
+    ER sendTimeout([in, size_is(size)] const uint8_t *message,
                    [in] uint32_t size, [in] TMO timeout);
     ER_UINT receive([out] uint8_t *message);
     ER_UINT receivePolling([out] uint8_t *message);
@@ -769,7 +769,7 @@ signature sMessageBuffer{
 [generate(HRP2ObjectPlugin, "MESSAGE_BUFFER")]
 celltype tMessageBuffer{
 	[inline] entry sMessageBuffer eMessageBuffer;
-  
+
 	attr {
 		ID      id = C_EXP( "MBFID_$id$" );
         /*
