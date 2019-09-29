@@ -56,8 +56,23 @@ celltype tTECSInfoMain {
   	uint8_t DATA_SIZE = 32;
   };
   var {
+  	/* 書き出されたバイト数 */
   	uint16_t bw;
+  	FRESULT fres;
+  	ER ercd;
+
+  	/* 変数の数と名前サイズ */
   	uint16_t num;
+	  int16_t name_length;
+
+	  uint32_t offset;
+  	int8_t place;
+
+	  /* 変数の値の種類とサイズ */
+	  int8_t v_kind;
+  	uint32_t v_size;
+
+  	/* 変数の名前と値 */
   	[size_is(NAME_LEN)]
   		char_t *var_name;
   	[size_is(DATA_SIZE)]
