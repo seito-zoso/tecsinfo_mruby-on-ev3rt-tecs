@@ -81,6 +81,7 @@ eBody_main(CELLIDX idx)
 
 	/* ここに処理本体を記述します #_TEFB_# */
   for( VAR_num = 1; VAR_num < 6;  VAR_num++){
+    VAR_num2 = VAR_num2 + 1.0;
     cLCD_drawString( "Task", 0, VAR_num + 5 );
     cKernel_delay(500);
     while(1){

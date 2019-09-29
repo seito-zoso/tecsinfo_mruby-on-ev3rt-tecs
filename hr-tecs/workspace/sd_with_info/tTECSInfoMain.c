@@ -194,8 +194,8 @@
 #include "tTECSInfoMain_tecsgen.h"
 
 #ifndef E_OK
-#define	E_OK	0		/* success */
-#define	E_ID	(-18)	/* illegal ID */
+#define E_OK  0   /* success */
+#define E_ID  (-18) /* illegal ID */
 #endif
 
 /* 受け口関数 #_TEPF_# */
@@ -213,15 +213,15 @@
 void
 eBody_main(CELLIDX idx)
 {
-	CELLCB	*p_cellcb;
-	if (VALID_IDX(idx)) {
-		p_cellcb = GET_CELLCB(idx);
-	}
-	else {
-		/* エラー処理コードをここに記述します */
-	} /* end if VALID_IDX(idx) */
+  CELLCB  *p_cellcb;
+  if (VALID_IDX(idx)) {
+    p_cellcb = GET_CELLCB(idx);
+  }
+  else {
+    /* エラー処理コードをここに記述します */
+  } /* end if VALID_IDX(idx) */
 
-	/* ここに処理本体を記述します #_TEFB_# */
+  /* ここに処理本体を記述します #_TEFB_# */
   Descriptor( nTECSInfo_sCellInfo )  cell_desc;
   Descriptor( nTECSInfo_sCelltypeInfo ) celltype_desc;
   Descriptor( nTECSInfo_sVarDeclInfo ) var_desc;
@@ -241,32 +241,25 @@ eBody_main(CELLIDX idx)
   int8_t kind;
   uint32_t size;
 
-  // cFatFile_fmount( "", 0 );
-  // cFatFile_fopen( "info/log.txt", "a" ); /* 追加書き込み */
-  // cFatFile_fwrite( ",", ATTR_BTW, &VAR_bw );
+  cFatFile_fmount( "", 0 );
+  cFatFile_fopen( "info/log.csv", "a" ); /* 追加書き込み */
   ercd = cTECSInfo_findCell( "rDomainEV3::TaskMain", &cell_desc );
   if( ercd != E_OK ){
     cLCD_drawString("Cannot find", 0, 0);
     return;
   }
-  // }else{
 
-  // }
   cCellInfo_set_descriptor( cell_desc );
-
-
   cCellInfo_getCelltypeInfo( &celltype_desc );
   cCelltypeInfo_set_descriptor( celltype_desc );
 
-  /* よくわからんがCelltypeセルに動的接続した後にやるとうまくいく。
+  /*
+   * よくわからんがCelltypeセルに動的接続した後にやるとうまくいく。
    * あとで大山さんに聞いてみる
    */
-  cCellInfo_getCBP( &cbp ); /* ちゃんととれてる。たまたまTaskMainは０。LCDはもっとふくざつであった */
+
+  cCellInfo_getCBP( &cbp );
   cCellInfo_getINIBP( &inibp );
-  snprintf( VAR_data, ATTR_DATA_SIZE, "cbp = 0x%08x", cbp );
-  cLCD_drawString( VAR_data, 0, 0 );
-  snprintf( VAR_data, ATTR_DATA_SIZE, "inibp = 0x%08x", inibp );
-  cLCD_drawString( VAR_data, 0, 1 );
 
   VAR_num = cCelltypeInfo_getNVar();
   for( i = 0; i < VAR_num; i++ ){
@@ -281,25 +274,19 @@ eBody_main(CELLIDX idx)
         base = inibp;
         break;
     case VARDECL_PLACE_CB:
-        base = cbp; /* cbpでした */
+        base = cbp;
         break;
     case VARDECL_PLACE_NON:
     default:
         base = 0;
     };
-
-
     cVarDeclInfo_getTypeInfo( &type_desc );
 
-    snprintf( VAR_data, ATTR_DATA_SIZE, "base = 0x%08x", base ); /* base = 0x00000000 */
-    cLCD_drawString( VAR_data, 0, 2 );
-
-
-    // if( base ){ /* 入らない */
+    if( base ){
       pval = base + offset; /* 0x000000000 */
       cTypeInfo_set_descriptor( type_desc );
-      kind = cTypeInfo_getKind(); /* intなので２でした */
-      size = cTypeInfo_getSize(); /* size = 1でした */
+      kind = cTypeInfo_getKind();
+      size = cTypeInfo_getSize();
 
       switch( kind ){
       case TECSTypeKind_BoolType:
@@ -307,8 +294,8 @@ eBody_main(CELLIDX idx)
           break;
       case TECSTypeKind_IntType:
           switch( size ){
-          case 1: /* ちゃんとここに入ることを確認 */
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%s = %d", VAR_var_name,*(int8_t *)(pval) );
+          case 1:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int8_t *)(pval) );
               break;
           case 2:
               snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int16_t *)(pval) );
@@ -338,16 +325,19 @@ eBody_main(CELLIDX idx)
       default:
           strcpy( VAR_data, "Not supported" );
       }
-    // }
-    cLCD_drawString( VAR_data , 0, 4 );
-    // cFatFile_fwrite( VAR_var_name, ATTR_BTW, &VAR_bw );
-    // cFatFile_fwrite( ",", ATTR_BTW, &VAR_bw );
-    // cFatFile_fwrite( VAR_data, ATTR_BTW, &VAR_bw );
-    // cFatFile_fwrite( "\n", ATTR_BTW, &VAR_bw );
-      /* Reset */
-    cCelltypeInfo_set_descriptor( celltype_desc );
+    }
+
+    cLCD_drawString(VAR_var_name, 0, i );
+    cLCD_drawString(VAR_data, 5, i );
+    // cFatFile_fwrite( VAR_var_name, sizeof(VAR_var_name), &VAR_bw );
+    // cFatFile_fwrite( ",", 1, &VAR_bw );
+    // cFatFile_fwrite( VAR_data, sizeof(VAR_data), &VAR_bw );
+    // cFatFile_fwrite( ",", 1, &VAR_bw );
+    /* Reset */
+    // cCelltypeInfo_set_descriptor( celltype_desc );
   }
-  // cFatFile_fclose();
+  // cFatFile_fwrite( "\n", 1, &VAR_bw );
+  cFatFile_fclose();
 }
 
 /* #[<POSTAMBLE>]#

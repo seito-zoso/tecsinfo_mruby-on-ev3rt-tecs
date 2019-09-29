@@ -9,17 +9,17 @@ celltype tTaskMain {
 	call sKernel cKernel;
 	var {
 		int8_t num = 0;
-		// int8_t num2;
+		double64_t num2 = 1.2;
 	};
 };
-celltype tTemp {
-	entry sTaskBody eBody;
+// celltype tTemp {
+// 	entry sTaskBody eBody;
 
-	var {
-		int8_t dummy = 1;
-		// int8_t num2;
-	};
-};
+// 	var {
+// 		int8_t dummy = 1;
+// 		// int8_t num2;
+// 	};
+// };
 celltype tTECSInfoMain {
 	entry sTaskBody	eBody;
 	call sLCD cLCD;
@@ -67,7 +67,7 @@ celltype tTECSInfoMain {
 //[domain(HRP2, "trusted")]
 //[domain(HRP2, "nontrusted")]
 region rDomainEV3 {
-	cell tTemp Temp {};
+	// cell tTemp Temp {};
 
 	cell tTaskMain TaskMain {
 		cLCD = LCD.eLCD;
