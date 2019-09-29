@@ -228,6 +228,7 @@ eBody_main(CELLIDX idx)
   Descriptor( nTECSInfo_sTypeInfo ) type_desc;
 
   ER ercd;
+  FRESULT fres;
   int16_t i;
   int16_t name_length;
 
@@ -241,8 +242,16 @@ eBody_main(CELLIDX idx)
   int8_t kind;
   uint32_t size;
 
-  cFatFile_fmount( "", 0 );
-  cFatFile_fopen( "info/log.csv", "a" ); /* 追加書き込み */
+  fres = cFatFile_fmount( "", 0 );
+  if( fres != FR_OK ){
+    cLCD_drawString("Cannot mount", 0, 0);
+    return;
+  }
+  fres = cFatFile_fopen( "info/log.csv", "a" ); /* 追加書き込み */
+  if( fres != FR_OK ){
+    cLCD_drawString("Cannot open", 0, 0);
+    return;
+  }
   ercd = cTECSInfo_findCell( "rDomainEV3::TaskMain", &cell_desc );
   if( ercd != E_OK ){
     cLCD_drawString("Cannot find", 0, 0);
@@ -263,6 +272,8 @@ eBody_main(CELLIDX idx)
 
   VAR_num = cCelltypeInfo_getNVar();
   for( i = 0; i < VAR_num; i++ ){
+    snprintf( VAR_data, ATTR_DATA_SIZE, "i = %d", i );
+    cLCD_drawString(VAR_data, 0, i + 3 );
     cCelltypeInfo_getVarInfo( i , &var_desc );
     cVarDeclInfo_set_descriptor( var_desc );
     name_length = cVarDeclInfo_getNameLength();
@@ -295,16 +306,16 @@ eBody_main(CELLIDX idx)
       case TECSTypeKind_IntType:
           switch( size ){
           case 1:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int8_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%d", VAR_var_name, *(int8_t *)(pval) );
               break;
           case 2:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int16_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%d", VAR_var_name, *(int16_t *)(pval) );
               break;
           case 4:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int32_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%d", VAR_var_name, *(int32_t *)(pval) );
               break;
           case 8:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%ld", *(int64_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%ld", VAR_var_name, *(int64_t *)(pval) );
               break;
           default:
               snprintf( VAR_data, ATTR_DATA_SIZE, "! unknown int type size(%d)", size );
@@ -313,10 +324,10 @@ eBody_main(CELLIDX idx)
       case TECSTypeKind_FloatType:
           switch( size ){
           case 4:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%g", (double)*(float32_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%g", VAR_var_name, (double)*(float32_t *)(pval) );
               break;
           case 8:
-              snprintf( VAR_data, ATTR_DATA_SIZE, "%g", (double)*(double64_t *)(pval) );
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s,%g", VAR_var_name, (double)*(double64_t *)(pval) );
               break;
           default:
               snprintf( VAR_data, ATTR_DATA_SIZE, "! unknown float type size(%d)", size );
@@ -327,12 +338,14 @@ eBody_main(CELLIDX idx)
       }
     }
 
-    cLCD_drawString(VAR_var_name, 0, i );
-    cLCD_drawString(VAR_data, 5, i );
-    // cFatFile_fwrite( VAR_var_name, sizeof(VAR_var_name), &VAR_bw );
-    // cFatFile_fwrite( ",", 1, &VAR_bw );
-    // cFatFile_fwrite( VAR_data, sizeof(VAR_data), &VAR_bw );
-    // cFatFile_fwrite( ",", 1, &VAR_bw );
+    // cLCD_drawString(VAR_var_name, 0, i );
+    cLCD_drawString(VAR_data, 0, i + 1 );
+    // fres = cFatFile_fwrite( VAR_data, sizeof(VAR_data), &VAR_bw );
+    fres = cFatFile_fwrite( VAR_data, ATTR_BTW, &VAR_bw ); /* この処理でVAR_numが書き変わる。。 */
+    if( fres == FR_OK ){
+      snprintf( VAR_data, ATTR_DATA_SIZE, "VAR_num = %d", VAR_num );
+      cLCD_drawString(VAR_data, 0, 0 );
+    }
     /* Reset */
     // cCelltypeInfo_set_descriptor( celltype_desc );
   }
