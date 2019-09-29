@@ -1,19 +1,31 @@
 import("EV3_common.cdl");
 import("TECSInfo.cdl");
-
+import("tFatFile.cdl");
 
 celltype tTaskMain {
 	entry sTaskBody eBody;
 	call sLCD cLCD;
 	call sButton cButton;
 	call sKernel cKernel;
+	var {
+		int8_t num = 0;
+		// int8_t num2;
+	};
 };
+celltype tTemp {
+	entry sTaskBody eBody;
 
+	var {
+		int8_t dummy = 1;
+		// int8_t num2;
+	};
+};
 celltype tTECSInfoMain {
 	entry sTaskBody	eBody;
 	call sLCD cLCD;
 	call sButton cButton;
 	call sKernel cKernel;
+	call sFatFile cFatFile;
 
   /* TECSInfo */
   call  nTECSInfo::sTECSInfo cTECSInfo;
@@ -37,10 +49,26 @@ celltype tTECSInfoMain {
       call  nTECSInfo::sParamInfo     cParamInfo;
   [dynamic,optional]
       call  nTECSInfo::sEntryInfo     cEntryInfo;
+
+  attr {
+  	uint8_t BTW = 32;
+  	uint8_t NAME_LEN = 32;
+  	uint8_t DATA_SIZE = 32;
+  };
+  var {
+  	uint16_t bw;
+  	uint16_t num;
+  	[size_is(NAME_LEN)]
+  		char_t *var_name;
+  	[size_is(DATA_SIZE)]
+  		char_t *data;
+  };
 };
 //[domain(HRP2, "trusted")]
 //[domain(HRP2, "nontrusted")]
 region rDomainEV3 {
+	cell tTemp Temp {};
+
 	cell tTaskMain TaskMain {
 		cLCD = LCD.eLCD;
 		cButton = Button.eButton;
@@ -56,6 +84,10 @@ region rDomainEV3 {
 		systemStackSize = C_EXP("MRUBY_VM_STACK_SIZE");
 		//userStackSize = C_EXP("STACK_SIZE");
 	};
+	/* FatFileセル */
+	cell tFatFile FatFile {
+
+	};
 
 	/* TECSInfo */
 	cell tTECSInfoMain TECSInfoMain {
@@ -63,13 +95,14 @@ region rDomainEV3 {
 		cLCD = LCD.eLCD;
 		cButton = Button.eButton;
     cKernel = HRP2Kernel.eKernel;
+    cFatFile = FatFile.eFatFile;
 	};
 	cell tCyclicTask TECSInfoTask {
 	// 呼び口の結合
 		cBody = TECSInfoMain.eBody;
 		//* 属性の設定
 		cyclicAttribute 	= C_EXP("TA_STA");
-		cyclicTime = 2000; // 1 = 1msec
+		cyclicTime = 100; // 1 = 1msec
 		priority = C_EXP("EV3_MRUBY_VM_PRIORITY - 1");
 		stackSize = C_EXP("MRUBY_VM_STACK_SIZE"); // systemstacksizeでなくていいのか。kernel.cdlも書き換えなければ
 		//userStackSize = C_EXP("STACK_SIZE");

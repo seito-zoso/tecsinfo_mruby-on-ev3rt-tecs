@@ -9,6 +9,15 @@
  * #[<...>]# から #[</...>]# で囲まれたコメントは編集しないでください
  * tecsmerge によるマージに使用されます
  *
+ * 属性アクセスマクロ #_CAAM_#
+ * BTW              uint8_t          ATTR_BTW
+ * NAME_LEN         uint8_t          ATTR_NAME_LEN
+ * DATA_SIZE        uint8_t          ATTR_DATA_SIZE
+ * bw               uint16_t         VAR_bw
+ * num              uint16_t         VAR_num
+ * var_name         char_t*          VAR_var_name
+ * data             char_t*          VAR_data
+ *
  * 呼び口関数 #_TCPF_#
  * call port: cLCD signature: sLCD context:task
  *   ER             cLCD_setFont( lcdfont_t font );
@@ -45,6 +54,14 @@
  *   bool_t         cKernel_senseDispatch( );
  *   bool_t         cKernel_senseDispatchPendingState( );
  *   bool_t         cKernel_senseKernel( );
+ * call port: cFatFile signature: sFatFile context:task
+ *   FRESULT        cFatFile_fopen( const TCHAR* path, const TCHAR* mode );
+ *   FRESULT        cFatFile_fclose( );
+ *   FRESULT        cFatFile_fread( TCHAR* buffer, UINT btr );
+ *   FRESULT        cFatFile_fwrite( const TCHAR* buffer, UINT btw, UINT* bw );
+ *   TCHAR*         cFatFile_fgets( TCHAR* buff, uint_t btr );
+ *   FRESULT        cFatFile_unlink( const TCHAR* path );
+ *   FRESULT        cFatFile_fmount( const TCHAR* path, BYTE opt );
  * call port: cTECSInfo signature: nTECSInfo_sTECSInfo context:task
  *   ER             cTECSInfo_findNamespace( const char_t* namespace_path, Descriptor( nTECSInfo_sNamespaceInfo )* nsDesc );
  *   ER             cTECSInfo_findRegion( const char_t* namespace_path, Descriptor( nTECSInfo_sRegionInfo )* regionDesc );
@@ -205,9 +222,132 @@ eBody_main(CELLIDX idx)
 	} /* end if VALID_IDX(idx) */
 
 	/* ここに処理本体を記述します #_TEFB_# */
-    cLCD_drawString( "Cyclc", 1, 0 );
-    cKernel_delay(1000);
-    cLCD_clear();
+  Descriptor( nTECSInfo_sCellInfo )  cell_desc;
+  Descriptor( nTECSInfo_sCelltypeInfo ) celltype_desc;
+  Descriptor( nTECSInfo_sVarDeclInfo ) var_desc;
+  Descriptor( nTECSInfo_sTypeInfo ) type_desc;
+
+  ER ercd;
+  int16_t i;
+  int16_t name_length;
+
+  void *cbp, *inibp;
+
+  uint32_t offset;
+  int8_t place;
+  void *pval;
+  void *base;
+
+  int8_t kind;
+  uint32_t size;
+
+  // cFatFile_fmount( "", 0 );
+  // cFatFile_fopen( "info/log.txt", "a" ); /* 追加書き込み */
+  // cFatFile_fwrite( ",", ATTR_BTW, &VAR_bw );
+  ercd = cTECSInfo_findCell( "rDomainEV3::TaskMain", &cell_desc );
+  if( ercd != E_OK ){
+    cLCD_drawString("Cannot find", 0, 0);
+    return;
+  }
+  // }else{
+
+  // }
+  cCellInfo_set_descriptor( cell_desc );
+
+
+  cCellInfo_getCelltypeInfo( &celltype_desc );
+  cCelltypeInfo_set_descriptor( celltype_desc );
+
+  /* よくわからんがCelltypeセルに動的接続した後にやるとうまくいく。
+   * あとで大山さんに聞いてみる
+   */
+  cCellInfo_getCBP( &cbp ); /* ちゃんととれてる。たまたまTaskMainは０。LCDはもっとふくざつであった */
+  cCellInfo_getINIBP( &inibp );
+  snprintf( VAR_data, ATTR_DATA_SIZE, "cbp = 0x%08x", cbp );
+  cLCD_drawString( VAR_data, 0, 0 );
+  snprintf( VAR_data, ATTR_DATA_SIZE, "inibp = 0x%08x", inibp );
+  cLCD_drawString( VAR_data, 0, 1 );
+
+  VAR_num = cCelltypeInfo_getNVar();
+  for( i = 0; i < VAR_num; i++ ){
+    cCelltypeInfo_getVarInfo( i , &var_desc );
+    cVarDeclInfo_set_descriptor( var_desc );
+    name_length = cVarDeclInfo_getNameLength();
+    cVarDeclInfo_getName( VAR_var_name, name_length );
+    cVarDeclInfo_getLocationInfo( &offset, &place );
+    switch( place ){
+    case VARDECL_PLACE_STRUCT:
+    case VARDECL_PLACE_INIB:
+        base = inibp;
+        break;
+    case VARDECL_PLACE_CB:
+        base = cbp; /* cbpでした */
+        break;
+    case VARDECL_PLACE_NON:
+    default:
+        base = 0;
+    };
+
+
+    cVarDeclInfo_getTypeInfo( &type_desc );
+
+    snprintf( VAR_data, ATTR_DATA_SIZE, "base = 0x%08x", base ); /* base = 0x00000000 */
+    cLCD_drawString( VAR_data, 0, 2 );
+
+
+    // if( base ){ /* 入らない */
+      pval = base + offset; /* 0x000000000 */
+      cTypeInfo_set_descriptor( type_desc );
+      kind = cTypeInfo_getKind(); /* intなので２でした */
+      size = cTypeInfo_getSize(); /* size = 1でした */
+
+      switch( kind ){
+      case TECSTypeKind_BoolType:
+          snprintf( VAR_data, ATTR_DATA_SIZE, "%s", *(bool_t*)pval ? "true" : "false" );
+          break;
+      case TECSTypeKind_IntType:
+          switch( size ){
+          case 1: /* ちゃんとここに入ることを確認 */
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%s = %d", VAR_var_name,*(int8_t *)(pval) );
+              break;
+          case 2:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int16_t *)(pval) );
+              break;
+          case 4:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%d", *(int32_t *)(pval) );
+              break;
+          case 8:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%ld", *(int64_t *)(pval) );
+              break;
+          default:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "! unknown int type size(%d)", size );
+          }
+          break;
+      case TECSTypeKind_FloatType:
+          switch( size ){
+          case 4:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%g", (double)*(float32_t *)(pval) );
+              break;
+          case 8:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "%g", (double)*(double64_t *)(pval) );
+              break;
+          default:
+              snprintf( VAR_data, ATTR_DATA_SIZE, "! unknown float type size(%d)", size );
+          }
+          break;
+      default:
+          strcpy( VAR_data, "Not supported" );
+      }
+    // }
+    cLCD_drawString( VAR_data , 0, 4 );
+    // cFatFile_fwrite( VAR_var_name, ATTR_BTW, &VAR_bw );
+    // cFatFile_fwrite( ",", ATTR_BTW, &VAR_bw );
+    // cFatFile_fwrite( VAR_data, ATTR_BTW, &VAR_bw );
+    // cFatFile_fwrite( "\n", ATTR_BTW, &VAR_bw );
+      /* Reset */
+    cCelltypeInfo_set_descriptor( celltype_desc );
+  }
+  // cFatFile_fclose();
 }
 
 /* #[<POSTAMBLE>]#

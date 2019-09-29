@@ -80,9 +80,8 @@ eBody_main(CELLIDX idx)
 	} /* end if VALID_IDX(idx) */
 
 	/* ここに処理本体を記述します #_TEFB_# */
-  int i;
-  for(i = 1; i < 10;  i++){
-    cLCD_drawString( "Task", 0, i );
+  for( VAR_num = 1; VAR_num < 6;  VAR_num++){
+    cLCD_drawString( "Task", 0, VAR_num + 5 );
     cKernel_delay(500);
     while(1){
       if( cButton_isPressed( ENTER_BUTTON ) ){
