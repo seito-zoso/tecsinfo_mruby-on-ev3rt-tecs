@@ -9,6 +9,15 @@
  * #[<...>]# から #[</...>]# で囲まれたコメントは編集しないでください
  * tecsmerge によるマージに使用されます
  *
+ * 属性アクセスマクロ #_CAAM_#
+ * white            int16_t          VAR_white
+ * black            int16_t          VAR_black
+ * lasterror        float32_t        VAR_lasterror
+ * integral         float32_t        VAR_integral
+ * midpoint         float32_t        VAR_midpoint
+ * error            float32_t        VAR_error
+ * steer            float32_t        VAR_steer
+ *
  * 呼び口関数 #_TCPF_#
  * call port: cLCD signature: sLCD context:task
  *   ER             cLCD_setFont( lcdfont_t font );
@@ -45,6 +54,37 @@
  *   bool_t         cKernel_senseDispatch( );
  *   bool_t         cKernel_senseDispatchPendingState( );
  *   bool_t         cKernel_senseKernel( );
+ * call port: cLeftMotor signature: sMotor context:task
+ *   ER_UINT        cLeftMotor_getType( );
+ *   int32_t        cLeftMotor_getCounts( );
+ *   int            cLeftMotor_getPower( );
+ *   ER             cLeftMotor_resetCounts( );
+ *   ER             cLeftMotor_setPower( int power );
+ *   ER             cLeftMotor_stop( bool_t brake );
+ *   ER             cLeftMotor_rotate( int degrees, uint32_t speed_abs, bool_t blocking );
+ *   void           cLeftMotor_initializePort( int32_t type );
+ * call port: cRightMotor signature: sMotor context:task
+ *   ER_UINT        cRightMotor_getType( );
+ *   int32_t        cRightMotor_getCounts( );
+ *   int            cRightMotor_getPower( );
+ *   ER             cRightMotor_resetCounts( );
+ *   ER             cRightMotor_setPower( int power );
+ *   ER             cRightMotor_stop( bool_t brake );
+ *   ER             cRightMotor_rotate( int degrees, uint32_t speed_abs, bool_t blocking );
+ *   void           cRightMotor_initializePort( int32_t type );
+ * call port: cSpeaker signature: sSpeaker context:task
+ *   ER             cSpeaker_setVolume( uint8_t volume );
+ *   ER             cSpeaker_playTone( uint16_t frequency, int32_t duration );
+ *   ER             cSpeaker_stop( );
+ * call port: cTouchSensor signature: sTouchSensor context:task
+ *   bool_t         cTouchSensor_isPressed( );
+ *   void           cTouchSensor_initializePort( );
+ * call port: cColorSensor signature: sColorSensor context:task
+ *   colorid_t      cColorSensor_getColor( );
+ *   uint8_t        cColorSensor_getReflect( );
+ *   uint8_t        cColorSensor_getAmbient( );
+ *   void           cColorSensor_initializePort( );
+ *   void           cColorSensor_getRGBRaw( uint16_t* r, uint16_t* g, uint16_t* b );
  *
  * #[</PREAMBLE>]# */
 
@@ -80,18 +120,46 @@ eBody_main(CELLIDX idx)
 	} /* end if VALID_IDX(idx) */
 
 	/* ここに処理本体を記述します #_TEFB_# */
-  for( VAR_num = 1; VAR_num < 6;  VAR_num++){
-    VAR_num2 = VAR_num2 + 1.0;
-    cLCD_drawString( "Task", 0, VAR_num + 5 );
-    cKernel_delay(500);
-    while(1){
-      if( cButton_isPressed( ENTER_BUTTON ) ){
-        break;
-      }
-    }
-  }
-  cLCD_clear();
 
+  /*
+   * C:\cygwin64\home\Shirata\ev3rt-beta7-3-release\hrp2\sdk\workspace\linetrace
+   * を参考にライントレースを実行してみる
+   */
+  cLCD_setFont( EV3_FONT_SMALL );
+
+  cLeftMotor_initializePort( LARGE_MOTOR );
+  cRightMotor_initializePort( LARGE_MOTOR );
+
+  cTouchSensor_initializePort();
+  cColorSensor_initializePort();
+
+  cSpeaker_playTone( NOTE_C4, 100 );
+  cKernel_sleepTimeout(100);
+  cSpeaker_playTone( NOTE_C4, 100 );
+
+  cLCD_drawString( "Press the touch sensor to measure light intensity of WHITE.", 0, 0);
+  while( !cTouchSensor_isPressed() );
+  while( cTouchSensor_isPressed() );
+  VAR_white = cColorSensor_getReflect();
+
+  cSpeaker_playTone( NOTE_C4, 100 );
+  cKernel_sleepTimeout(100);
+  cSpeaker_playTone( NOTE_C4, 100 );
+
+  cLCD_drawString( "Press the touch sensor to measure light intensity of WHITE.", 0, 0);
+  while( !cTouchSensor_isPressed() );
+  while( cTouchSensor_isPressed() );
+  VAR_black = cColorSensor_getReflect();
+
+  VAR_midpoint = (VAR_white - VAR_black) / 2 + black;
+  while(1){
+    VAR_error = VAR_midpoint - cColorSensor_getReflect();
+    VAR_integral = VAR_error + VAR_integral * 0.5;
+    VAR_steer = 0.07 * VAR_error + 0.3 * VAR_integral + 1 * (VAR_error - VAR_lasterror);
+    ev3_motor_steer( EV3_PORT_B, EV3_PORT_C, 10, steer ); /* TECS未対応関数 */
+    VAR_lasterror = VAR_error;
+    cKernel_sleepTimeout(1);
+  }
 }
 
 /* #[<POSTAMBLE>]#

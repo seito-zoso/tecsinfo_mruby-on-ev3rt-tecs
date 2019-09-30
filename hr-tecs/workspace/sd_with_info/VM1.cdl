@@ -4,12 +4,24 @@ import("tFatFile.cdl");
 
 celltype tTaskMain {
 	entry sTaskBody eBody;
+
 	call sLCD cLCD;
 	call sButton cButton;
 	call sKernel cKernel;
+	call sMotor cLeftMotor;
+	call sMotor cRightMotor;
+	call sSpeaker cSpeaker;
+	call sTouchSensor cTouchSensor;
+	call sColorSensor cColorSensor;
+
 	var {
-		int8_t num = 0;
-		double64_t num2 = 1.2;
+		int8_t white;
+		int8_t black;
+    float32_t lasterror = 0;
+    float32_t integral = 0;
+    float32_t midpoint;
+    float32_t error;
+    float32_t steer;
 	};
 };
 // celltype tTemp {
@@ -88,6 +100,11 @@ region rDomainEV3 {
 		cLCD = LCD.eLCD;
 		cButton = Button.eButton;
     cKernel = HRP2Kernel.eKernel;
+    cColorSensor = ColorSensor3.eColorSensor;
+    cTouchSensor = TouchSensor2.eTouchSensor;
+    cLeftMotor = MotorB.eMotor;
+    cRightMotor = MotorC.eMotor;
+    cSpeaker = Speaker.eSpeaker;
 	};
 	cell tTask Task {
 	// 呼び口の結合
